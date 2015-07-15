@@ -51,5 +51,13 @@
 			</list>
 		</property>
 	</bean>
+
+    <bean id="hrsreports.app.reports" factory-bean="kenyacore.appFactoryBean" factory-method="createInstance">
+        <constructor-arg value="hrsreports.reports" />
+        <constructor-arg value="HRS Report" />
+        <constructor-arg value="hrsreports/cohortImport.page" />
+        <constructor-arg value="hrsreports:apps/order_history.png" />
+        <constructor-arg value="1100000" />
+    </bean>
 	
 </beans>
