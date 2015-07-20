@@ -52,12 +52,34 @@
 		</property>
 	</bean>
 
+    <bean id="hrsreports.config.report" class="org.openmrs.module.kenyacore.report.ReportConfiguration">
+        <property name="commonReports">
+            <set>
+                <ref bean="hrsreports.common.report.hrsstudyvariablereport" />
+            </set>
+        </property>
+    </bean>
+
+
     <bean id="hrsreports.app.reports" factory-bean="kenyacore.appFactoryBean" factory-method="createInstance">
         <constructor-arg value="hrsreports.reports" />
         <constructor-arg value="HRS Report" />
         <constructor-arg value="hrsreports/cohortImport.page" />
         <constructor-arg value="hrsreports:apps/order_history.png" />
         <constructor-arg value="1100000" />
+    </bean>
+
+    <!--Add reports here -->
+    <bean id="hrsreports.common.report.hrsstudyvariablereport" class="org.openmrs.module.kenyacore.report.HybridReportDescriptor">
+        <property name="targetUuid" value="e2cac59f-2d83-11e5-942f-000c29853f9c" />
+        <property name="name" value="HRS Study Report" />
+        <property name="description" value="Report for HRS Study" />
+        <property name="apps">
+            <set>
+                <ref bean="kenyaemr.app.reports" />
+            </set></property>
+        <property name="template" value="kenyaemr:rdqa/rdqaTemplate.xls" />
+        <property name="repeatingSection" value="sheet:1,row:11,dataset:allPatients" />
     </bean>
 	
 </beans>

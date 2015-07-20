@@ -14,53 +14,67 @@
 
 package org.openmrs.module.hrsreports.api.reporting.builder;
 
-import org.openmrs.Concept;
-import org.openmrs.EncounterType;
-import org.openmrs.PatientIdentifierType;
-import org.openmrs.calculation.patient.PatientCalculation;
-import org.openmrs.module.hrsreports.api.reporting.definition.HRSReportCohortDefinition;
-import org.openmrs.module.kenyacore.report.HybridReportDescriptor;
+import org.openmrs.module.hrsreports.api.reporting.query.definition.StudyVisitQuery;
+import org.openmrs.module.kenyacore.report.ReportDescriptor;
 import org.openmrs.module.kenyacore.report.ReportUtils;
-import org.openmrs.module.kenyacore.report.builder.AbstractHybridReportBuilder;
+import org.openmrs.module.kenyacore.report.builder.AbstractReportBuilder;
 import org.openmrs.module.kenyacore.report.builder.Builds;
-import org.openmrs.module.kenyacore.report.data.patient.definition.CalculationDataDefinition;
-import org.openmrs.module.kenyaemr.Dictionary;
-import org.openmrs.module.kenyaemr.calculation.library.hiv.art.CurrentArtRegimenCalculation;
-import org.openmrs.module.kenyaemr.calculation.library.hiv.art.InitialArtStartDateCalculation;
-import org.openmrs.module.kenyaemr.calculation.library.hiv.art.TransferInDateCalculation;
-import org.openmrs.module.kenyaemr.calculation.library.hiv.art.TransferOutDateCalculation;
-import org.openmrs.module.kenyaemr.calculation.library.rdqa.*;
-import org.openmrs.module.kenyaemr.metadata.CommonMetadata;
-import org.openmrs.module.kenyaemr.metadata.HivMetadata;
-import org.openmrs.module.kenyaemr.reporting.calculation.converter.*;
-import org.openmrs.module.metadatadeploy.MetadataUtils;
-import org.openmrs.module.reporting.cohort.definition.CohortDefinition;
-import org.openmrs.module.reporting.common.TimeQualifier;
-import org.openmrs.module.reporting.data.DataDefinition;
-import org.openmrs.module.reporting.data.converter.BirthdateConverter;
-import org.openmrs.module.reporting.data.converter.DataConverter;
-import org.openmrs.module.reporting.data.converter.ObjectFormatter;
-import org.openmrs.module.reporting.data.patient.definition.ConvertedPatientDataDefinition;
-import org.openmrs.module.reporting.data.patient.definition.EncountersForPatientDataDefinition;
-import org.openmrs.module.reporting.data.patient.definition.PatientIdentifierDataDefinition;
-import org.openmrs.module.reporting.data.person.definition.*;
-import org.openmrs.module.reporting.dataset.definition.PatientDataSetDefinition;
+import org.openmrs.module.reporting.data.patient.definition.PatientIdDataDefinition;
+import org.openmrs.module.reporting.data.person.definition.BirthdateDataDefinition;
+import org.openmrs.module.reporting.data.visit.definition.VisitIdDataDefinition;
+import org.openmrs.module.reporting.dataset.definition.DataSetDefinition;
+import org.openmrs.module.reporting.dataset.definition.VisitDataSetDefinition;
 import org.openmrs.module.reporting.evaluation.parameter.Mapped;
+import org.openmrs.module.reporting.evaluation.parameter.Parameter;
+import org.openmrs.module.reporting.report.definition.ReportDefinition;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 @Component
-@Builds({"hrsreports.common.report.hrsstudyreport"})
-public class HRSReportBuilder extends AbstractHybridReportBuilder {
-	public static final String DATE_FORMAT = "dd/MM/yyyy";
+@Builds({"hrsreports.common.report.hrsstudyvariablereport"})
+public class HRSReportBuilder extends AbstractReportBuilder {
+    public static final String DATE_FORMAT = "dd/MM/yyyy";
 
-	/**
-	 *
-	 * @see org.openmrs.module.kenyacore.report.builder.AbstractCohortReportBuilder#addColumns(org.openmrs.module.kenyacore.report.CohortReportDescriptor, org.openmrs.module.reporting.dataset.definition.PatientDataSetDefinition)
-	 */
-	@Override
+    @Override
+    protected List<Parameter> getParameters(ReportDescriptor reportDescriptor) {
+        return Arrays.asList(
+                new Parameter("startDate", "Start Date", Date.class)
+        );
+    }
+
+    @Override
+    protected List<Mapped<DataSetDefinition>> buildDataSets(ReportDescriptor reportDescriptor, ReportDefinition reportDefinition) {
+        return Arrays.asList(
+                ReportUtils.map(datasetColumns(), "startDate=${startDate}")
+        );
+    }
+
+    protected DataSetDefinition datasetColumns() {
+        VisitDataSetDefinition dsd = new VisitDataSetDefinition();
+        dsd.setName("VisitInformation");
+        dsd.setDescription("Visit information");
+
+        dsd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        /*dsd.addParameter(new Parameter("endDate", "End Date", Date.class));*/
+
+        /*String mapping = "startDate=${startDate},endDate=${endDate}";*/
+        String mapping = "startDate=${startDate}";
+
+        dsd.addColumn("VISIT ID", new VisitIdDataDefinition(), null);	// Test a basic encounter data item
+        dsd.addColumn("EMR ID", new PatientIdDataDefinition(), null); 			// Test a basic patient data item
+        dsd.addColumn("BIRTHDATE", new BirthdateDataDefinition(), null); 		// Test a basic person data item
+        dsd.addRowFilter(new StudyVisitQuery(), "");
+        return dsd;
+
+    }
+        /**
+         *
+         * @see org.openmrs.module.kenyacore.report.builder.AbstractCohortReportBuilder#addColumns(org.openmrs.module.kenyacore.report.CohortReportDescriptor, org.openmrs.module.reporting.dataset.definition.PatientDataSetDefinition)
+         */
+	/*@Override
 	protected void addColumns(HybridReportDescriptor report, PatientDataSetDefinition dsd) {
 
 		PatientIdentifierType upn = MetadataUtils.existing(PatientIdentifierType.class, HivMetadata._PatientIdentifierType.UNIQUE_PATIENT_NUMBER);
@@ -145,6 +159,7 @@ public class HRSReportBuilder extends AbstractHybridReportBuilder {
         cd.setName("HRS Study Patients");
 		return ReportUtils.map(cd, "");
 	}
+*/
 
 
 }

@@ -17,14 +17,19 @@ public class CohortImportPageController {
     protected final Log log = LogFactory.getLog(getClass());
 
     public void get() {
-        log.info("Fetching the default page");
-        System.out.println("Fetching the default page ==============================================");
+        System.out.println("This is for get request:::::::::::::::::::::::::::::::::::::::::::::::::::::::");
     }
 
-    public void post(/*@RequestParam("cohortFile") MultipartFile cohortFile, UiUtils ui*/){
+  /*  public void post(*//*@RequestParam("cohortFile") MultipartFile cohortFile, UiUtils ui*//*){
         System.out.println("HEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEERRRRRRRRRRRRRR");
         log.info("This request is reaching the controller---------------------------------------------------------------------");
         //return successPage;// "redirect:" + ui.pageLink("hrsreports", successPage, null);
+
+    }*/
+
+    public String post(UiUtils ui){
+        System.out.println("This is for post request:::::::::::::::::::::::::::::::::::::::::::::::::::::::::");
+        return "redirect:" + ui.pageLink("hrsreports", successPage, null);
 
     }
 }

@@ -32,7 +32,7 @@ public class HRSReportMetadata extends AbstractMetadataBundle {
 
 	@Override
 	public void install() throws Exception {
-		install(globalProperty(DEFAULT_COHORT, "HRS Study Default Cohort. Should be a list of patient IDs else all patients qualify", defaultConfig));
+		//install(globalProperty(DEFAULT_COHORT, "HRS Study Default Cohort. Should be a list of patient IDs else all patients qualify", defaultConfig));
 
 	}
 }
