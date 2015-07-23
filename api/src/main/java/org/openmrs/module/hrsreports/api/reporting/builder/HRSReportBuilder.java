@@ -14,12 +14,26 @@
 
 package org.openmrs.module.hrsreports.api.reporting.builder;
 
+import org.openmrs.PatientIdentifierType;
+import org.openmrs.module.hrsreports.api.reporting.definition.data.*;
 import org.openmrs.module.hrsreports.api.reporting.query.definition.StudyVisitQuery;
 import org.openmrs.module.kenyacore.report.ReportDescriptor;
 import org.openmrs.module.kenyacore.report.ReportUtils;
 import org.openmrs.module.kenyacore.report.builder.AbstractReportBuilder;
 import org.openmrs.module.kenyacore.report.builder.Builds;
+import org.openmrs.module.kenyacore.report.data.patient.definition.CalculationDataDefinition;
+import org.openmrs.module.kenyaemr.calculation.library.hiv.art.DateOfEnrollmentCalculation;
+import org.openmrs.module.kenyaemr.calculation.library.hiv.art.InitialArtStartDateCalculation;
+import org.openmrs.module.kenyaemr.metadata.HivMetadata;
+import org.openmrs.module.kenyaemr.reporting.calculation.converter.DateArtStartDateConverter;
+import org.openmrs.module.kenyaemr.reporting.data.converter.CalculationResultConverter;
+import org.openmrs.module.metadatadeploy.MetadataUtils;
+import org.openmrs.module.reporting.data.DataDefinition;
+import org.openmrs.module.reporting.data.converter.DataConverter;
+import org.openmrs.module.reporting.data.converter.ObjectFormatter;
+import org.openmrs.module.reporting.data.patient.definition.ConvertedPatientDataDefinition;
 import org.openmrs.module.reporting.data.patient.definition.PatientIdDataDefinition;
+import org.openmrs.module.reporting.data.patient.definition.PatientIdentifierDataDefinition;
 import org.openmrs.module.reporting.data.person.definition.BirthdateDataDefinition;
 import org.openmrs.module.reporting.data.visit.definition.VisitIdDataDefinition;
 import org.openmrs.module.reporting.dataset.definition.DataSetDefinition;
@@ -63,9 +77,20 @@ public class HRSReportBuilder extends AbstractReportBuilder {
         /*String mapping = "startDate=${startDate},endDate=${endDate}";*/
         String mapping = "startDate=${startDate}";
 
+        PatientIdentifierType upn = MetadataUtils.existing(PatientIdentifierType.class, HivMetadata._PatientIdentifierType.UNIQUE_PATIENT_NUMBER);
+        DataConverter identifierFormatter = new ObjectFormatter("{identifier}");
+        DataDefinition identifierDef = new ConvertedPatientDataDefinition("identifier", new PatientIdentifierDataDefinition(upn.getName(), upn), identifierFormatter);
+
         dsd.addColumn("VISIT ID", new VisitIdDataDefinition(), null);	// Test a basic encounter data item
         dsd.addColumn("EMR ID", new PatientIdDataDefinition(), null); 			// Test a basic patient data item
-        dsd.addColumn("BIRTHDATE", new BirthdateDataDefinition(), null); 		// Test a basic person data item
+        dsd.addColumn("Unique Patient Number", identifierDef, null); 		// Test a basic person data item
+        dsd.addColumn("Date Enrolled in Care", new CalculationDataDefinition("DOE", new DateOfEnrollmentCalculation()), "", new CalculationResultConverter());
+        dsd.addColumn("Date Created", new DateCreatedDataDefinition(), null);
+        dsd.addColumn("CD4", new VisitCD4DataDefinition(), null);
+        dsd.addColumn("Viral Load", new ViralLoadDataDefinition(), null);
+        dsd.addColumn("Next Visit Date", new NextVisitDateDataDefinition(), null);
+        dsd.addColumn("Art Start Date", new CalculationDataDefinition("Art Start Date", new InitialArtStartDateCalculation()), "", new DateArtStartDateConverter());
+
         dsd.addRowFilter(new StudyVisitQuery(), "");
         return dsd;
 

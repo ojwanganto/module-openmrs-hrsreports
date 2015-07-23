@@ -13,6 +13,8 @@ import org.openmrs.module.reporting.query.visit.definition.VisitQuery;
 import org.openmrs.module.reporting.query.visit.evaluator.VisitQueryEvaluator;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -31,11 +33,15 @@ public class StudyVisitQueryEvaluator implements VisitQueryEvaluator {
         String qry = HRSUtil.getInitialCohortQuery();
         SqlQueryBuilder builder = new SqlQueryBuilder();
         builder.append(qry);
-        builder.addParameter("startDate", context.getParameterValue("startDate"));
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.YEAR, -2);
+        Date effectiveDate = calendar.getTime();
+       // builder.addParameter("startDate", effectiveDate /*context.getParameterValue("startDate")*/);
         builder.addParameter("patientIds", HRSUtil.getReportCohort());
 
         List<Integer> results = evaluationService.evaluateToList(builder, Integer.class, context);
         queryResult.getMemberIds().addAll(results);
+
         return queryResult;
     }
 

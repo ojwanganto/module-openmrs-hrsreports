@@ -30,11 +30,15 @@
 	
 	<!-- Maps hibernate file's, if present -->
 	<mappingFiles>
-				
 		HRSReport.hbm.xml
-				
 	</mappingFiles>
 
+    <!--Add global properties-->
+    <globalProperty>
+        <property>${project.parent.artifactId}.cohort_file_dir</property>
+        <defaultValue>${project.parent.artifactId}</defaultValue>
+        <description>Directory for storing uploaded cohort files</description>
+    </globalProperty>
 	<!-- Internationalization -->
 	<!-- All message codes should start with ${project.parent.artifactId}. -->
 	<messages>
