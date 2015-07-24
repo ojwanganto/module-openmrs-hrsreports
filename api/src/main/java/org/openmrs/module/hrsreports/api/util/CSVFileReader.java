@@ -9,6 +9,8 @@ import java.io.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * csv file reader
@@ -39,6 +41,7 @@ public class CSVFileReader {
 
         String line;
         CohortFile cohortFile = new CohortFile();
+        Set<Integer> ids = new HashSet<Integer>();
 
         try {
             while ((line = bufferedReader.readLine()) != null) //we know it is one line
@@ -61,10 +64,12 @@ public class CSVFileReader {
                 System.out.println("Block lenght " + fileBlocks.length);
 
                 for (int i=1; i < fileBlocks.length; i++) {
-                   // cohortFile.getPatientIds().add(Integer.valueOf(fileBlocks[i].trim()));
-                    System.out.println("ID: " + fileBlocks[i] + " at: " + i);
+                    Integer id = Integer.valueOf(fileBlocks[i]);
+                    ids.add(id);
+                    System.out.println("ID: " + id + " at: " + i);
                 }
-                 return cohortFile;
+                cohortFile.setPatientIds(ids);
+                return cohortFile;
             }
         } catch (IOException e) {
             e.printStackTrace();

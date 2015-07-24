@@ -20,6 +20,8 @@ import java.util.Set;
  * Util class for HRSReports
  */
 public class HRSUtil {
+    private static final String COMMA_DELIMITER = ",";
+    private static final int EFFECTIVE_DATE_INDEX = 0;
     public static Set<Integer> getReportCohort() {
         return new HashSet<Integer>(Arrays.asList(2016364,18477,5189,6446,6528,5196,18477,16393,26095,16792,5056,16520,16559,15367,14417,6457,4860,19082,13749,15649,19916,7432,6178));
     }
@@ -36,7 +38,7 @@ public class HRSUtil {
 
     }
 
-    private static void processCSVFile () {
+    private static CohortFile processCSVFile () {
 
         AdministrationService as = Context.getAdministrationService();
         String folderName = as.getGlobalProperty("hrsreports.cohort_file_dir");
@@ -44,6 +46,8 @@ public class HRSUtil {
         String csvFilename = "testCohort.csv";
         File loaddir = OpenmrsUtil.getDirectoryInApplicationDataDirectory(folderName);
         File csvFile = new File(loaddir, csvFilename);
+
+        System.out.println("File status ==================" + csvFile.exists());
 
         BufferedReader bufferedReader = null;
         try {
@@ -55,34 +59,41 @@ public class HRSUtil {
         }
 
         String line;
-        CohortFile cohortFile = null;
+        CohortFile cohortFile = new CohortFile();
+        Set<Integer> ids = new HashSet<Integer>();
 
         try {
-            while ((line = bufferedReader.readLine()) != null)
+            while ((line = bufferedReader.readLine()) != null) //we know it is one line
             {
                 System.out.println("Looping through");
-                String fileBlocks[] = line.split(",");
-                System.out.println("Date component: " + fileBlocks[0]);
+                String fileBlocks[] = line.split(COMMA_DELIMITER);
+                System.out.println("Date component: " + fileBlocks[EFFECTIVE_DATE_INDEX]);
                 SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-                cohortFile = new CohortFile();
+
+
                 try {
-                    Date effectiveDate = df.parse(fileBlocks[0]);
+                    Date effectiveDate = df.parse(fileBlocks[EFFECTIVE_DATE_INDEX]);
                     cohortFile.setEffectiveDate(effectiveDate);
+                    System.out.println("Parsed date: " + effectiveDate);
                 } catch (ParseException e) {
+                    System.out.println("There was an error parsing date");
                     e.printStackTrace();
                 }
 
+                System.out.println("Block lenght " + fileBlocks.length);
+
                 for (int i=1; i < fileBlocks.length; i++) {
-                    cohortFile.getPatientIds().add(Integer.valueOf(fileBlocks[i].trim()));
-                    System.out.println("ID: " + fileBlocks[i] + " at: " + i);
+                    Integer id = Integer.valueOf(fileBlocks[i]);
+                    ids.add(id);
+                    System.out.println("ID: " + id + " at: " + i);
                 }
-               // return cohortFile;
+                cohortFile.setPatientIds(ids);
+                return cohortFile;
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        //return cohortFile;
+        return cohortFile;
     }
-
 
 }
