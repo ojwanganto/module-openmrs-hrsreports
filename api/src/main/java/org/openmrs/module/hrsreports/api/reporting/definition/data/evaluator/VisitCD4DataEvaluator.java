@@ -48,10 +48,11 @@ public class VisitCD4DataEvaluator implements VisitDataEvaluator {
 
         SqlQueryBuilder queryBuilder = new SqlQueryBuilder();
         queryBuilder.append(qry);
-        //queryBuilder.addParameter("startDate", context.getParameterValue("startDate"));
+        queryBuilder.addParameter("effectiveDate", HRSUtil.getReportEffectiveDate());
         queryBuilder.addParameter("patientIds", HRSUtil.getReportCohort());
         Map<Integer, Object> data = evaluationService.evaluateToMap(queryBuilder, Integer.class, Object.class, context);
         c.setData(data);
+        System.out.println("Completed processing CD4 count/percent");
         return c;
     }
 }

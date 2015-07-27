@@ -23,7 +23,11 @@ public class HRSUtil {
     private static final String COMMA_DELIMITER = ",";
     private static final int EFFECTIVE_DATE_INDEX = 0;
     public static Set<Integer> getReportCohort() {
-        return new HashSet<Integer>(Arrays.asList(2016364,18477,5189,6446,6528,5196,18477,16393,26095,16792,5056,16520,16559,15367,14417,6457,4860,19082,13749,15649,19916,7432,6178));
+        return processCSVFile().getPatientIds();
+    }
+
+    public static Date getReportEffectiveDate() {
+        return processCSVFile().getEffectiveDate();
     }
 
     public static String getInitialCohortQuery () {
@@ -32,7 +36,7 @@ public class HRSUtil {
                         + " on e.visit_id=v.visit_id "
                         + " and e.voided=0 and v.voided=0 "
                         + " inner join obs o on o.encounter_id=e.encounter_id "
-                  + " where e.encounter_type = 8 and o.concept_id in(5497, 730,856) and v.date_started >= '2014-01-01' "
+                  + " where e.encounter_type = 8 and o.concept_id in(5497, 730,856) and v.date_started >= :effectiveDate "
                   + " and v.patient_id in (:patientIds) "; //consider filtering using concepts for cd4 and viral load
         return qry;
 
@@ -42,22 +46,15 @@ public class HRSUtil {
 
         AdministrationService as = Context.getAdministrationService();
         String folderName = as.getGlobalProperty("hrsreports.cohort_file_dir");
-
         String csvFilename = "testCohort.csv";
         File loaddir = OpenmrsUtil.getDirectoryInApplicationDataDirectory(folderName);
         File csvFile = new File(loaddir, csvFilename);
-
-        System.out.println("File status ==================" + csvFile.exists());
-
         BufferedReader bufferedReader = null;
         try {
             bufferedReader = new BufferedReader(new FileReader(csvFile));
-            System.out.println("The file has been read successfully");
-
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         String line;
         CohortFile cohortFile = new CohortFile();
         Set<Integer> ids = new HashSet<Integer>();
@@ -65,27 +62,20 @@ public class HRSUtil {
         try {
             while ((line = bufferedReader.readLine()) != null) //we know it is one line
             {
-                System.out.println("Looping through");
                 String fileBlocks[] = line.split(COMMA_DELIMITER);
-                System.out.println("Date component: " + fileBlocks[EFFECTIVE_DATE_INDEX]);
                 SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-
 
                 try {
                     Date effectiveDate = df.parse(fileBlocks[EFFECTIVE_DATE_INDEX]);
                     cohortFile.setEffectiveDate(effectiveDate);
-                    System.out.println("Parsed date: " + effectiveDate);
                 } catch (ParseException e) {
                     System.out.println("There was an error parsing date");
                     e.printStackTrace();
                 }
 
-                System.out.println("Block lenght " + fileBlocks.length);
-
                 for (int i=1; i < fileBlocks.length; i++) {
                     Integer id = Integer.valueOf(fileBlocks[i]);
                     ids.add(id);
-                    System.out.println("ID: " + id + " at: " + i);
                 }
                 cohortFile.setPatientIds(ids);
                 return cohortFile;

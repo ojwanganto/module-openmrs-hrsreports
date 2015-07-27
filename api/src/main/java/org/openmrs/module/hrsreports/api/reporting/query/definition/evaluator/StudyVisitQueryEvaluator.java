@@ -33,15 +33,13 @@ public class StudyVisitQueryEvaluator implements VisitQueryEvaluator {
         String qry = HRSUtil.getInitialCohortQuery();
         SqlQueryBuilder builder = new SqlQueryBuilder();
         builder.append(qry);
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.YEAR, -2);
-        Date effectiveDate = calendar.getTime();
-       // builder.addParameter("startDate", effectiveDate /*context.getParameterValue("startDate")*/);
+        builder.addParameter("effectiveDate", HRSUtil.getReportEffectiveDate());
         builder.addParameter("patientIds", HRSUtil.getReportCohort());
 
         List<Integer> results = evaluationService.evaluateToList(builder, Integer.class, context);
         queryResult.getMemberIds().addAll(results);
-
+        System.out.println("Effective date: ==============================" + HRSUtil.getReportEffectiveDate());
+        System.out.println("Completed processing visit query: Total visits: " + results.size());
         return queryResult;
     }
 

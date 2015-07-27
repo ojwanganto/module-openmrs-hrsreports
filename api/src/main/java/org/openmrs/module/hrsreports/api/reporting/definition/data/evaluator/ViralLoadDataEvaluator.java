@@ -27,8 +27,6 @@ public class ViralLoadDataEvaluator implements VisitDataEvaluator {
     public EvaluatedVisitData evaluate(VisitDataDefinition definition, EvaluationContext context) throws EvaluationException {
         EvaluatedVisitData c = new EvaluatedVisitData(definition, context);
 
-        CSVFileReader reader = new CSVFileReader();
-        reader.readCSVFile("sample");
         String qry = "select v.visit_id, o.value_numeric"
                         + " from visit v "
                         + " inner join encounter e on e.visit_id = v.visit_id "
@@ -43,10 +41,11 @@ public class ViralLoadDataEvaluator implements VisitDataEvaluator {
 
         SqlQueryBuilder queryBuilder = new SqlQueryBuilder();
         queryBuilder.append(qry);
-       // queryBuilder.addParameter("startDate", context.getParameterValue("startDate"));
+        queryBuilder.addParameter("effectiveDate", HRSUtil.getReportEffectiveDate());
         queryBuilder.addParameter("patientIds", HRSUtil.getReportCohort());
         Map<Integer, Object> data = evaluationService.evaluateToMap(queryBuilder, Integer.class, Object.class, context);
         c.setData(data);
+        System.out.println("Completed processing Viral Load");
         return c;
     }
 }

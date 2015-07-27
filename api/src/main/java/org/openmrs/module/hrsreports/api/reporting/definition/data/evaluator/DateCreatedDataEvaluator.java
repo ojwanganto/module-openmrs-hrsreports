@@ -37,9 +37,9 @@ public class DateCreatedDataEvaluator implements VisitDataEvaluator {
 
         SqlQueryBuilder queryBuilder = new SqlQueryBuilder();
         queryBuilder.append(qry);
-        //queryBuilder.addParameter("startDate", context.getParameterValue("startDate"));
+        queryBuilder.addParameter("effectiveDate", HRSUtil.getReportEffectiveDate());
         queryBuilder.addParameter("patientIds", HRSUtil.getReportCohort());
-        System.out.println("List of visit IDs: ==============================" + HRSUtil.getReportCohort());
+        System.out.println("Completed processing Date record created");
         Map<Integer, Object> data = evaluationService.evaluateToMap(queryBuilder, Integer.class, Object.class, context);
         c.setData(data);
         return c;
