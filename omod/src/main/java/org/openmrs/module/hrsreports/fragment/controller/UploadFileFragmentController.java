@@ -16,6 +16,17 @@ import java.io.*;
  */
 public class UploadFileFragmentController {
     public void controller(FragmentModel model){
+        AdministrationService as = Context.getAdministrationService();
+        String folderName = as.getGlobalProperty("hrsreports.cohort_file_dir");
+        String csvFilename = "testCohort.csv";
+        File loaddir = OpenmrsUtil.getDirectoryInApplicationDataDirectory(folderName);
+        File csvFile = new File(loaddir, csvFilename);
+        String fileExists = "No cohort file found. Please upload a cohort file in csv format. Refer to the side pane for more direction.";
+
+        if (csvFile.exists())
+            fileExists = "A cohort file already exists. Please upload a fresh one to override the existing if required";
+
+        model.put("fileExist", fileExists);
 
     }
     public void uploadFile (@RequestParam("cohortFile") MultipartFile cohortFile, UiUtils ui) {
@@ -35,30 +46,5 @@ public class UploadFileFragmentController {
             System.out.println("Sorry, the file could not be copied");
             e.printStackTrace();
         }
-
-       /* BufferedReader bufferedReader = null;
-        try {
-            bufferedReader = new BufferedReader(new FileReader(csvFile));
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        String line;
-
-        try {
-            while ((line = bufferedReader.readLine()) != null)
-            {
-                String fileBlocks[] = line.split(",");
-
-                System.out.println("Date component: " + fileBlocks[0]);
-
-                for (int i=1; i < fileBlocks.length; i++) {
-                    System.out.println("ID: " + fileBlocks[i] + " at: " + i);
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
     }
 }

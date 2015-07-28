@@ -63,7 +63,7 @@
 
     <bean id="hrsreports.app.reports" factory-bean="kenyacore.appFactoryBean" factory-method="createInstance">
         <constructor-arg value="hrsreports.reports" />
-        <constructor-arg value="HRS Report" />
+        <constructor-arg value="HRS Report Configuration" />
         <constructor-arg value="hrsreports/cohortImport.page" />
         <constructor-arg value="hrsreports:apps/order_history.png" />
         <constructor-arg value="1100000" />
@@ -78,8 +78,8 @@
             <set>
                 <ref bean="kenyaemr.app.reports" />
             </set></property>
-        <property name="template" value="kenyaemr:rdqa/rdqaTemplate.xls" />
-        <property name="repeatingSection" value="sheet:1,row:11,dataset:allPatients" />
+        <property name="template" value="hrsreports:hrsreport.xls" />
+        <property name="repeatingSection" value="sheet:1,row:3,dataset:VisitInformation" />
     </bean>
 	
 </beans>

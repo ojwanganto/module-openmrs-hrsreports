@@ -54,15 +54,13 @@ public class HRSReportBuilder extends AbstractReportBuilder {
 
     @Override
     protected List<Parameter> getParameters(ReportDescriptor reportDescriptor) {
-        return Arrays.asList(
-                new Parameter("startDate", "Start Date", Date.class)
-        );
+        return Arrays.asList();
     }
 
     @Override
     protected List<Mapped<DataSetDefinition>> buildDataSets(ReportDescriptor reportDescriptor, ReportDefinition reportDefinition) {
         return Arrays.asList(
-                ReportUtils.map(datasetColumns(), "startDate=${startDate}")
+                ReportUtils.map(datasetColumns(), "")
         );
     }
 
@@ -70,9 +68,6 @@ public class HRSReportBuilder extends AbstractReportBuilder {
         VisitDataSetDefinition dsd = new VisitDataSetDefinition();
         dsd.setName("VisitInformation");
         dsd.setDescription("Visit information");
-
-        dsd.addParameter(new Parameter("startDate", "Start Date", Date.class));
-        String mapping = "startDate=${startDate}";
 
         PatientIdentifierType upn = MetadataUtils.existing(PatientIdentifierType.class, HivMetadata._PatientIdentifierType.UNIQUE_PATIENT_NUMBER);
         DataConverter identifierFormatter = new ObjectFormatter("{identifier}");
