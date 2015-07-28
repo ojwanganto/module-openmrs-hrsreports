@@ -1,5 +1,5 @@
 <div>
-    <p><h4>Uploading Cohort file for HRS Report</h4></p>
+    <p><b>Uploading Cohort file for HRS Report</b></p>
     <div>
         <p>
             Cohort file is a CSV (Comma separated list) file with date component (effective Date) as first element and a list of unique patient identifiers <br/>
@@ -23,7 +23,7 @@
         <ul>
             <li>Select cohort file using "Choose File" button</li>
             <li>Upload the file to the system</li>
-            <li>Navigate to <b>Reports<b> app on <b>Home</b> page and click <b>"HRS Study Report"</b>></li>
+            <li>Navigate to <b>Reports</b> app on <b>Home</b> page and click <b>"HRS Study Report"</b></li>
         </ul>
     </div>
 </div>
