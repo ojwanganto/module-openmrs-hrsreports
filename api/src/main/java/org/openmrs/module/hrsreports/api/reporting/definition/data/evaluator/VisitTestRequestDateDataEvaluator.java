@@ -27,12 +27,9 @@ public class VisitTestRequestDateDataEvaluator implements VisitDataEvaluator {
     public EvaluatedVisitData evaluate(VisitDataDefinition definition, EvaluationContext context) throws EvaluationException {
         EvaluatedVisitData c = new EvaluatedVisitData(definition, context);
 
-        String qry = "select v.visit_id, DATE(v.date_started) "
-                        + " from visit v "
-                        + " inner join encounter e on e.visit_id = v.visit_id "
-                        + " inner join obs o on o.encounter_id = e.encounter_id and o.voided=0 "
-                        + " where o.concept_id in(5497, 730) "
-                        + " and v.date_started > :startDate  ";
+        String qry = "select v.visit_id, DATE(e.date_created) from visit v "
+                + " inner join encounter e "
+                + " on e.visit_id=v.visit_id ";
 
         //we want to restrict visits to those for patients in question
         qry = qry + " and v.visit_id in (";
@@ -41,8 +38,9 @@ public class VisitTestRequestDateDataEvaluator implements VisitDataEvaluator {
 
         SqlQueryBuilder queryBuilder = new SqlQueryBuilder();
         queryBuilder.append(qry);
-        queryBuilder.addParameter("startDate", context.getParameterValue("startDate"));
+        queryBuilder.addParameter("effectiveDate", HRSUtil.getReportEffectiveDate());
         queryBuilder.addParameter("patientIds", HRSUtil.getReportCohort());
+        System.out.println("Completed processing Date Test Requested ");
         Map<Integer, Object> data = evaluationService.evaluateToMap(queryBuilder, Integer.class, Object.class, context);
         c.setData(data);
         return c;

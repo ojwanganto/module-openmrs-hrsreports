@@ -26,6 +26,7 @@ import org.openmrs.module.kenyaemr.calculation.library.hiv.art.DateOfEnrollmentC
 import org.openmrs.module.kenyaemr.calculation.library.hiv.art.InitialArtStartDateCalculation;
 import org.openmrs.module.kenyaemr.metadata.HivMetadata;
 import org.openmrs.module.kenyaemr.reporting.calculation.converter.DateArtStartDateConverter;
+import org.openmrs.module.kenyaemr.reporting.calculation.converter.GenderConverter;
 import org.openmrs.module.kenyaemr.reporting.data.converter.CalculationResultConverter;
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.module.reporting.data.DataDefinition;
@@ -35,6 +36,7 @@ import org.openmrs.module.reporting.data.patient.definition.ConvertedPatientData
 import org.openmrs.module.reporting.data.patient.definition.PatientIdDataDefinition;
 import org.openmrs.module.reporting.data.patient.definition.PatientIdentifierDataDefinition;
 import org.openmrs.module.reporting.data.person.definition.BirthdateDataDefinition;
+import org.openmrs.module.reporting.data.person.definition.GenderDataDefinition;
 import org.openmrs.module.reporting.data.visit.definition.VisitIdDataDefinition;
 import org.openmrs.module.reporting.dataset.definition.DataSetDefinition;
 import org.openmrs.module.reporting.dataset.definition.VisitDataSetDefinition;
@@ -73,16 +75,19 @@ public class HRSReportBuilder extends AbstractReportBuilder {
         DataConverter identifierFormatter = new ObjectFormatter("{identifier}");
         DataDefinition identifierDef = new ConvertedPatientDataDefinition("identifier", new PatientIdentifierDataDefinition(upn.getName(), upn), identifierFormatter);
 
-        dsd.addColumn("VISIT ID", new VisitIdDataDefinition(), null);	// Test a basic encounter data item
-        dsd.addColumn("EMR ID", new PatientIdDataDefinition(), null); 			// Test a basic patient data item
-        dsd.addColumn("Unique Patient Number", identifierDef, null); 		// Test a basic person data item
+        dsd.addColumn("VISIT ID", new VisitIdDataDefinition(), null);
+        dsd.addColumn("EMR ID", new PatientIdDataDefinition(), null);
+        dsd.addColumn("Sex", new GenderDataDefinition(), "", new GenderConverter());
+        dsd.addColumn("Unique Patient Number", identifierDef, null);
         dsd.addColumn("Date Enrolled in Care", new CalculationDataDefinition("DOE", new DateOfEnrollmentCalculation()), "", new CalculationResultConverter());
+        dsd.addColumn("Request Date", new VisitTestRequestDateDataDefinition(), null);
+        dsd.addColumn("Date of Result", new DateCreatedDataDefinition(), null);
         dsd.addColumn("Date Created", new DateCreatedDataDefinition(), null);
         dsd.addColumn("CD4", new VisitCD4DataDefinition(), null);
         dsd.addColumn("Viral Load", new ViralLoadDataDefinition(), null);
         dsd.addColumn("Next Visit Date", new NextVisitDateDataDefinition(), null);
         dsd.addColumn("Art Start Date", new CalculationDataDefinition("Art Start Date", new InitialArtStartDateCalculation()), "", new DateArtStartDateConverter());
-
+//
         dsd.addRowFilter(new StudyVisitQuery(), "");
         return dsd;
 

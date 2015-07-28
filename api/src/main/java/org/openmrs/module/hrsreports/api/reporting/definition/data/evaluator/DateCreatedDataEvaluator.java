@@ -26,9 +26,11 @@ public class DateCreatedDataEvaluator implements VisitDataEvaluator {
     public EvaluatedVisitData evaluate(VisitDataDefinition definition, EvaluationContext context) throws EvaluationException {
         EvaluatedVisitData c = new EvaluatedVisitData(definition, context);
 
-        String qry = "select v.visit_id, DATE(e.date_created) from visit v "
-                + " inner join encounter e "
-                + " on e.visit_id=v.visit_id ";
+        String qry = "SELECT v.visit_id, DATE(o.date_created) "
+                + " FROM visit v "
+                + " INNER JOIN encounter e  "
+                + " ON e.visit_id=v.visit_id  "
+                + " INNER JOIN obs o on o.encounter_id=e.encounter_id ";
 
         //we want to restrict visits to those for patients in question
         qry = qry + " where v.visit_id in (";

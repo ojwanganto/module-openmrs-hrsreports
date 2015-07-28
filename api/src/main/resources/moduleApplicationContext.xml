@@ -79,7 +79,7 @@
                 <ref bean="kenyaemr.app.reports" />
             </set></property>
         <property name="template" value="hrsreports:hrsreport.xls" />
-        <property name="repeatingSection" value="sheet:1,row:3,dataset:VisitInformation" />
+        <property name="repeatingSection" value="sheet:1,row:6,dataset:VisitInformation" />
     </bean>
 	
 </beans>
