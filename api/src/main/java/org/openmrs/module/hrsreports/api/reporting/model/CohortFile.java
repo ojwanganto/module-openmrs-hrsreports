@@ -8,12 +8,12 @@ import java.util.Set;
  */
 public class CohortFile {
     private Date effectiveDate;
-    private Set<Integer> patientIds;
+    private Set<Long> patientIds;
 
     public CohortFile() {
     }
 
-    public CohortFile(Date effectiveDate, Set<Integer> patientIds) {
+    public CohortFile(Date effectiveDate, Set<Long> patientIds) {
         this.effectiveDate = effectiveDate;
         this.patientIds = patientIds;
     }
@@ -26,11 +26,11 @@ public class CohortFile {
         this.effectiveDate = effectiveDate;
     }
 
-    public Set<Integer> getPatientIds() {
+    public Set<Long> getPatientIds() {
         return patientIds;
     }
 
-    public void setPatientIds(Set<Integer> patientIds) {
+    public void setPatientIds(Set<Long> patientIds) {
         this.patientIds = patientIds;
     }
 }

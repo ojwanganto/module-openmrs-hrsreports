@@ -7,6 +7,7 @@ import org.openmrs.api.AdministrationService;
 import org.openmrs.api.PatientSetService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.hrsreports.api.reporting.model.CohortFile;
+import org.openmrs.module.kenyaemr.api.KenyaEmrService;
 import org.openmrs.module.reporting.cohort.definition.CodedObsCohortDefinition;
 import org.openmrs.module.reporting.cohort.definition.CompositionCohortDefinition;
 import org.openmrs.module.reporting.cohort.definition.service.CohortDefinitionService;
@@ -28,7 +29,7 @@ import java.util.*;
 public class HRSUtil {
     private static final String COMMA_DELIMITER = ",";
     private static final int EFFECTIVE_DATE_INDEX = 0;
-    public static Set<Integer> getReportCohort() {
+    public static Set<Long> getReportCohort() {
         if (processCSVFile() == null)
             return defaultCohort();
         return processCSVFile().getPatientIds();
@@ -41,13 +42,21 @@ public class HRSUtil {
     }
 
     public static String getInitialCohortQuery () {
+    /*    String qry = "select v.visit_id from visit v "
+                + " inner join encounter e "
+                + " on e.visit_id=v.visit_id "
+                + " and e.voided=0 and v.voided=0 "
+                + " inner join obs o on o.encounter_id=e.encounter_id "
+                + " where e.encounter_type = 8 and o.concept_id in(5497, 730,856) and v.date_started >= :effectiveDate "
+                + " and v.patient_id in (:patientIds) ";*/
         String qry = "select v.visit_id from visit v "
                         + " inner join encounter e "
                         + " on e.visit_id=v.visit_id "
                         + " and e.voided=0 and v.voided=0 "
+                        + " inner join patient_identifier pi on pi.patient_id=e.patient_id "
                         + " inner join obs o on o.encounter_id=e.encounter_id "
-                  + " where e.encounter_type = 8 and o.concept_id in(5497, 730,856) and v.date_started >= :effectiveDate "
-                  + " and v.patient_id in (:patientIds) "; //consider filtering using concepts for cd4 and viral load
+                  + " where e.encounter_type = 8 and o.concept_id in(5497, 730,856) and v.date_started >= :effectiveDate and pi.identifier_type=3 "
+                  + " and pi.identifier in (:patientIds) "; //consider filtering using concepts for cd4 and viral load
         return qry;
 
     }
@@ -71,7 +80,7 @@ public class HRSUtil {
         }
         String line;
         CohortFile cohortFile = new CohortFile();
-        Set<Integer> ids = new HashSet<Integer>();
+        Set<Long> ids = new HashSet<Long>();
 
         try {
             while ((line = bufferedReader.readLine()) != null) //we know it is one line
@@ -88,7 +97,7 @@ public class HRSUtil {
                 }
 
                 for (int i=1; i < fileBlocks.length; i++) {
-                    Integer id = Integer.valueOf(fileBlocks[i]);
+                    Long id = Long.valueOf(fileBlocks[i].trim());
                     ids.add(id);
                 }
                 cohortFile.setPatientIds(ids);
@@ -100,11 +109,29 @@ public class HRSUtil {
         return cohortFile;
     }
 
-    private static Set<Integer> defaultCohort() {
+    private static Set<Long> defaultCohort() {
 
         Date defaultDate = getDefaultDate();
+        String qry = "select pi.identifier from visit v "
+                + " inner join encounter e "
+                + " on e.visit_id=v.visit_id "
+                + " and e.voided=0 and v.voided=0 "
+                + " inner join patient_identifier pi on pi.patient_id=e.patient_id "
+                + " inner join obs o on o.encounter_id=e.encounter_id "
+                + " where e.encounter_type = 8 and o.concept_id in(5497, 730,856) and v.date_started >= :effectiveDate and pi.identifier_type=3 ";
 
-        CodedObsCohortDefinition cd4count = new CodedObsCohortDefinition();
+        Map<String, Object> m = new HashMap<String, Object>();
+        m.put("effectiveDate", getDefaultDate());
+        List<Object> data = Context.getService(KenyaEmrService.class).executeSqlQuery(qry, m);
+        Set<Long> idSet = new HashSet<Long>();
+        for (Object o : data) {
+            String str = (String) o;
+            Long ptId = Long.parseLong(str);
+            idSet.add(ptId);
+        }
+        return idSet;
+
+        /*CodedObsCohortDefinition cd4count = new CodedObsCohortDefinition();
         cd4count.setQuestion(new Concept(5497));
         cd4count.setTimeModifier(PatientSetService.TimeModifier.ANY);
         cd4count.setEncounterTypeList(Arrays.asList(new EncounterType(8)));
@@ -127,16 +154,16 @@ public class HRSUtil {
         cd.addSearch("cd4Cohort", Mapped.noMappings(cd4count));
         cd.addSearch("cd4Percent", Mapped.noMappings(cd4percent));
         cd.addSearch("viralLoad", Mapped.noMappings(viralLoad));
-        cd.setCompositionString("cd4Cohort OR cd4Percent OR viralLoad");
+        cd.setCompositionString("cd4Cohort OR cd4Percent OR viralLoad");*/
 
 
-        try {
+       /* try {
             Cohort cohort = Context.getService(CohortDefinitionService.class).evaluate(cd, null);
             return cohort.getMemberIds();
         } catch (EvaluationException e) {
             e.printStackTrace();
         }
-        return new HashSet<Integer>();
+        return new HashSet<Integer>();*/
     }
 
     private static Date getDefaultDate () {
@@ -146,4 +173,30 @@ public class HRSUtil {
         return defaultDate;
     }
 
+    protected Set<Integer> makePatientDataMapFromSQL(String sql, Map<String, Object> substitutions) {
+        List<Object> data = Context.getService(KenyaEmrService.class).executeSqlQuery(sql, substitutions);
+        Set<Integer> idSet = new HashSet<Integer>();
+        for (Object o : data) {
+            Object[] parts = (Object[]) o;
+            if (parts.length == 2) {
+                Integer ptId = (Integer) parts[0];
+                idSet.add(ptId);
+            }
+        }
+
+        return idSet;
+    }
+
+    protected Set<Integer> makePatientDataMap(List<Object> data) {
+        Set<Integer> idSet = new HashSet<Integer>();
+        for (Object o : data) {
+            Object[] parts = (Object[]) o;
+            if (parts.length == 2) {
+                Integer ptId = (Integer) parts[0];
+                idSet.add(ptId);
+            }
+        }
+
+        return idSet;
+    }
 }

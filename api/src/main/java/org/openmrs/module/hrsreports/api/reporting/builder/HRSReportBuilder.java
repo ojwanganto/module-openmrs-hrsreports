@@ -31,6 +31,7 @@ import org.openmrs.module.kenyaemr.reporting.data.converter.CalculationResultCon
 import org.openmrs.module.metadatadeploy.MetadataUtils;
 import org.openmrs.module.reporting.data.DataDefinition;
 import org.openmrs.module.reporting.data.converter.DataConverter;
+import org.openmrs.module.reporting.data.converter.DateConverter;
 import org.openmrs.module.reporting.data.converter.ObjectFormatter;
 import org.openmrs.module.reporting.data.patient.definition.ConvertedPatientDataDefinition;
 import org.openmrs.module.reporting.data.patient.definition.PatientIdDataDefinition;
@@ -77,15 +78,15 @@ public class HRSReportBuilder extends AbstractReportBuilder {
 
         dsd.addColumn("VISIT ID", new VisitIdDataDefinition(), null);
         dsd.addColumn("EMR ID", new PatientIdDataDefinition(), null);
-        dsd.addColumn("Sex", new GenderDataDefinition(), "", new GenderConverter());
+        dsd.addColumn("Sex", new GenderDataDefinition(), "");
         dsd.addColumn("Unique Patient Number", identifierDef, null);
         dsd.addColumn("Date Enrolled in Care", new CalculationDataDefinition("DOE", new DateOfEnrollmentCalculation()), "", new CalculationResultConverter());
-        dsd.addColumn("Request Date", new VisitTestRequestDateDataDefinition(), null);
-        dsd.addColumn("Date of Result", new DateCreatedDataDefinition(), null);
-        dsd.addColumn("Date Created", new DateCreatedDataDefinition(), null);
+        dsd.addColumn("Request Date", new VisitTestRequestDateDataDefinition(),"", new DateConverter("dd/MM/yyyy"));
+        dsd.addColumn("Date of Result", new DateCreatedDataDefinition(), "", new DateConverter("dd/MM/yyyy") );
+        dsd.addColumn("Date Created", new DateCreatedDataDefinition(), "", new DateConverter("dd/MM/yyyy"));
         dsd.addColumn("CD4", new VisitCD4DataDefinition(), null);
         dsd.addColumn("Viral Load", new ViralLoadDataDefinition(), null);
-        dsd.addColumn("Next Visit Date", new NextVisitDateDataDefinition(), null);
+        dsd.addColumn("Next Visit Date", new NextVisitDateDataDefinition(), "", new DateConverter("dd/MM/yyyy"));
         dsd.addColumn("Art Start Date", new CalculationDataDefinition("Art Start Date", new InitialArtStartDateCalculation()), "", new DateArtStartDateConverter());
 //
         dsd.addRowFilter(new StudyVisitQuery(), "");

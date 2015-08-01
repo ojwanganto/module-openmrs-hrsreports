@@ -41,7 +41,7 @@ public class CSVFileReader {
 
         String line;
         CohortFile cohortFile = new CohortFile();
-        Set<Integer> ids = new HashSet<Integer>();
+        Set<Long> ids = new HashSet<Long>();
 
         try {
             while ((line = bufferedReader.readLine()) != null) //we know it is one line
@@ -64,7 +64,7 @@ public class CSVFileReader {
                 System.out.println("Block lenght " + fileBlocks.length);
 
                 for (int i=1; i < fileBlocks.length; i++) {
-                    Integer id = Integer.valueOf(fileBlocks[i]);
+                    Long id = Long.valueOf(fileBlocks[i]);
                     ids.add(id);
                     System.out.println("ID: " + id + " at: " + i);
                 }
