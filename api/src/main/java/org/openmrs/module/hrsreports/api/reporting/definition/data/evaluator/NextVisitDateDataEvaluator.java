@@ -41,6 +41,7 @@ public class NextVisitDateDataEvaluator implements VisitDataEvaluator {
         SqlQueryBuilder queryBuilder = new SqlQueryBuilder();
         queryBuilder.append(qry);
         queryBuilder.addParameter("effectiveDate", HRSUtil.getReportEffectiveDate());
+        queryBuilder.addParameter("endDate", HRSUtil.getReportEndDate());
         queryBuilder.addParameter("patientIds", HRSUtil.getReportCohort());
         Map<Integer, Object> data = evaluationService.evaluateToMap(queryBuilder, Integer.class, Object.class, context);
         c.setData(data);

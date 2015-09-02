@@ -15,6 +15,7 @@
 package org.openmrs.module.hrsreports.api.reporting.builder;
 
 import org.openmrs.PatientIdentifierType;
+import org.openmrs.module.hrsreports.api.reporting.converter.GenericDateConverter;
 import org.openmrs.module.hrsreports.api.reporting.definition.data.*;
 import org.openmrs.module.hrsreports.api.reporting.query.definition.StudyVisitQuery;
 import org.openmrs.module.kenyacore.report.ReportDescriptor;
@@ -53,7 +54,7 @@ import java.util.List;
 @Component
 @Builds({"hrsreports.common.report.hrsstudyvariablereport"})
 public class HRSReportBuilder extends AbstractReportBuilder {
-    public static final String DATE_FORMAT = "dd/MM/yyyy";
+    public static final String DATE_FORMAT = "yyyy-MM-dd";
 
     @Override
     protected List<Parameter> getParameters(ReportDescriptor reportDescriptor) {
@@ -80,15 +81,14 @@ public class HRSReportBuilder extends AbstractReportBuilder {
         dsd.addColumn("EMR ID", new PatientIdDataDefinition(), null);
         dsd.addColumn("Sex", new GenderDataDefinition(), "");
         dsd.addColumn("Unique Patient Number", identifierDef, null);
-        dsd.addColumn("Date Enrolled in Care", new CalculationDataDefinition("DOE", new DateOfEnrollmentCalculation()), "", new CalculationResultConverter());
-        dsd.addColumn("Request Date", new VisitTestRequestDateDataDefinition(),"", new DateConverter("dd/MM/yyyy"));
-        dsd.addColumn("Date of Result", new DateCreatedDataDefinition(), "", new DateConverter("dd/MM/yyyy") );
-        dsd.addColumn("Date Created", new DateCreatedDataDefinition(), "", new DateConverter("dd/MM/yyyy"));
+        dsd.addColumn("Date Enrolled in Care", new CalculationDataDefinition("DOE", new EnrollmentDateCalculation()), "", new GenericDateConverter());
+        dsd.addColumn("Request Date", new VisitTestRequestDateDataDefinition(),"", new DateConverter(DATE_FORMAT));
+        dsd.addColumn("Date of Result", new DateCreatedDataDefinition(), "", new DateConverter(DATE_FORMAT) );
+        dsd.addColumn("Date Created", new DateCreatedDataDefinition(), "", new DateConverter(DATE_FORMAT));
         dsd.addColumn("CD4", new VisitCD4DataDefinition(), null);
         dsd.addColumn("Viral Load", new ViralLoadDataDefinition(), null);
-        dsd.addColumn("Next Visit Date", new NextVisitDateDataDefinition(), "", new DateConverter("dd/MM/yyyy"));
-        dsd.addColumn("Art Start Date", new CalculationDataDefinition("Art Start Date", new InitialArtStartDateCalculation()), "", new DateArtStartDateConverter());
-//
+        dsd.addColumn("Next Visit Date", new NextVisitDateDataDefinition(), "", new DateConverter(DATE_FORMAT));
+        dsd.addColumn("Art Start Date", new CalculationDataDefinition("Art Start Date", new InitialArtStartDateCalculation()), "", new GenericDateConverter());
         dsd.addRowFilter(new StudyVisitQuery(), "");
         return dsd;
 

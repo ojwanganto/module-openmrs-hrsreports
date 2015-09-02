@@ -34,11 +34,13 @@ public class StudyVisitQueryEvaluator implements VisitQueryEvaluator {
         SqlQueryBuilder builder = new SqlQueryBuilder();
         builder.append(qry);
         builder.addParameter("effectiveDate", HRSUtil.getReportEffectiveDate());
+        builder.addParameter("endDate", HRSUtil.getReportEndDate());
         builder.addParameter("patientIds", HRSUtil.getReportCohort());
 
         List<Integer> results = evaluationService.evaluateToList(builder, Integer.class, context);
         queryResult.getMemberIds().addAll(results);
         System.out.println("Effective date: ==============================" + HRSUtil.getReportEffectiveDate());
+        System.out.println("End Date: ==============================" + HRSUtil.getReportEndDate());
         System.out.println("Completed processing visit query: Total visits: " + results.size());
         return queryResult;
     }

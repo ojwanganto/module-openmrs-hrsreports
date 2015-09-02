@@ -26,20 +26,23 @@ public class DateCreatedDataEvaluator implements VisitDataEvaluator {
     public EvaluatedVisitData evaluate(VisitDataDefinition definition, EvaluationContext context) throws EvaluationException {
         EvaluatedVisitData c = new EvaluatedVisitData(definition, context);
 
-        String qry = "SELECT v.visit_id, DATE(o.date_created) "
-                + " FROM visit v "
-                + " INNER JOIN encounter e  "
-                + " ON e.visit_id=v.visit_id  "
-                + " INNER JOIN obs o on o.encounter_id=e.encounter_id ";
+        String qry = "SELECT " +
+                " v.visit_id, " +
+                " o.date_created " +
+                " FROM visit v " +
+                " INNER JOIN encounter e ON e.visit_id=v.visit_id " +
+                " INNER JOIN obs o on o.encounter_id=e.encounter_id " +
+                " where o.concept_id in(5497,730,856) ";
 
         //we want to restrict visits to those for patients in question
-        qry = qry + " where v.visit_id in (";
+        qry = qry + " and v.visit_id in (";
         qry = qry + HRSUtil.getInitialCohortQuery();
         qry = qry + ") ";
 
         SqlQueryBuilder queryBuilder = new SqlQueryBuilder();
         queryBuilder.append(qry);
         queryBuilder.addParameter("effectiveDate", HRSUtil.getReportEffectiveDate());
+        queryBuilder.addParameter("endDate", HRSUtil.getReportEndDate());
         queryBuilder.addParameter("patientIds", HRSUtil.getReportCohort());
         System.out.println("Completed processing Date record created");
         Map<Integer, Object> data = evaluationService.evaluateToMap(queryBuilder, Integer.class, Object.class, context);
