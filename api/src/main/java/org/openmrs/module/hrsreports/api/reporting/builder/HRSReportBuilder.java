@@ -82,6 +82,7 @@ public class HRSReportBuilder extends AbstractReportBuilder {
         dsd.addColumn("Sex", new GenderDataDefinition(), "");
         dsd.addColumn("Unique Patient Number", identifierDef, null);
         dsd.addColumn("Date Enrolled in Care", new CalculationDataDefinition("DOE", new EnrollmentDateCalculation()), "", new GenericDateConverter());
+        dsd.addColumn("Visit Date", new VisitTestRequestDateDataDefinition(),"", new DateConverter(DATE_FORMAT));
         dsd.addColumn("Request Date", new VisitTestRequestDateDataDefinition(),"", new DateConverter(DATE_FORMAT));
         dsd.addColumn("Date of Result", new DateCreatedDataDefinition(), "", new DateConverter(DATE_FORMAT) );
         dsd.addColumn("Date Created", new DateCreatedDataDefinition(), "", new DateConverter(DATE_FORMAT));
@@ -89,6 +90,7 @@ public class HRSReportBuilder extends AbstractReportBuilder {
         dsd.addColumn("Viral Load", new ViralLoadDataDefinition(), null);
         dsd.addColumn("Next Visit Date", new NextVisitDateDataDefinition(), "", new DateConverter(DATE_FORMAT));
         dsd.addColumn("Art Start Date", new CalculationDataDefinition("Art Start Date", new InitialArtStartDateCalculation()), "", new GenericDateConverter());
+        dsd.addColumn("evaluationDate", new CalculationDataDefinition("Query Date", new QueryDateCalculation()),"", new GenericDateConverter());
         dsd.addRowFilter(new StudyVisitQuery(), "");
         return dsd;
 
