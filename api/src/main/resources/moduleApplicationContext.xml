@@ -65,7 +65,7 @@
         <constructor-arg value="hrsreports.reports" />
         <constructor-arg value="HRS Report Configuration" />
         <constructor-arg value="hrsreports/cohortImport.page" />
-        <constructor-arg value="hrsreports:apps/order_history.png" />
+        <constructor-arg value="hrsreports:apps/hrs_report-icon.gif" />
         <constructor-arg value="1100000" />
     </bean>
 
