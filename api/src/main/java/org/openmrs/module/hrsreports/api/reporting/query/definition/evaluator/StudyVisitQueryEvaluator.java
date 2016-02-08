@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -35,7 +36,7 @@ public class StudyVisitQueryEvaluator implements VisitQueryEvaluator {
         builder.append(qry);
         builder.addParameter("effectiveDate", HRSUtil.getReportEffectiveDate());
         builder.addParameter("endDate", HRSUtil.getReportEndDate());
-        builder.addParameter("patientIds", HRSUtil.getReportCohort());
+        builder.addParameter("patientIds", HRSUtil.getReportCohort().size()==0? new HashSet<Long>(0):HRSUtil.getReportCohort());
 
         List<Integer> results = evaluationService.evaluateToList(builder, Integer.class, context);
         queryResult.getMemberIds().addAll(results);

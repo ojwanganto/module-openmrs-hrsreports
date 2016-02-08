@@ -51,13 +51,12 @@ public class HRSUtil {
     public static String getInitialCohortQuery () {
 
         String qry = "select v.visit_id from visit v "
-                        + " inner join encounter e "
-                        + " on e.visit_id=v.visit_id "
-                        + " and e.voided=0 and v.voided=0 "
-                        + " inner join patient_identifier pi on pi.patient_id=e.patient_id "
-                        + " inner join obs o on o.encounter_id=e.encounter_id "
-                  + " where e.encounter_type = 8 and o.concept_id in(5497, 730,856) and (v.date_started between :effectiveDate and :endDate) and pi.identifier_type=3 "
+                        + " inner join encounter e on e.visit_id=v.visit_id and e.voided=0 and e.encounter_type in(7,8) "
+                        + " inner join patient_identifier pi on pi.patient_id=v.patient_id and pi.identifier_type=3 "
+                        + " inner join obs o on o.encounter_id=e.encounter_id and o.concept_id in(5497, 730,856) "
+                  + " where v.date_started between :effectiveDate and :endDate "
                   + " and pi.identifier in (:patientIds) "; //consider filtering using concepts for cd4 and viral load
+
         return qry;
 
     }
@@ -114,12 +113,10 @@ public class HRSUtil {
 
     private static Set<Long> defaultCohort() {
         String qry = "select pi.identifier from visit v "
-                + " inner join encounter e "
-                + " on e.visit_id=v.visit_id "
-                + " and e.voided=0 and v.voided=0 "
-                + " inner join patient_identifier pi on pi.patient_id=e.patient_id "
-                + " inner join obs o on o.encounter_id=e.encounter_id "
-                + " where e.encounter_type = 8 and o.concept_id in(5497, 730,856) and v.date_started >= :effectiveDate and pi.identifier_type=3 ";
+                + " inner join encounter e on e.visit_id=v.visit_id and e.voided=0 and e.encounter_type in(7,8) "
+                + " inner join patient_identifier pi on pi.patient_id=v.patient_id and pi.identifier_type=3 "
+                + " inner join obs o on o.encounter_id=e.encounter_id and o.concept_id in(5497, 730,856) "
+                + " where v.voided=0 and v.date_started >= :effectiveDate  ";
 
         Map<String, Object> m = new HashMap<String, Object>();
         m.put("effectiveDate", getDefaultDate());
