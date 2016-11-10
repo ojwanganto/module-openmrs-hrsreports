@@ -1,8 +1,7 @@
 package org.openmrs.module.hrsreports.api.reporting.definition.data.evaluator;
 
 import org.openmrs.annotation.Handler;
-import org.openmrs.module.hrsreports.api.reporting.definition.data.VisitCD4DataDefinition;
-import org.openmrs.module.hrsreports.api.reporting.definition.data.VisitDateCreatedDataDefinition;
+import org.openmrs.module.hrsreports.api.reporting.definition.data.DateCreatedDataDefinition;
 import org.openmrs.module.hrsreports.api.util.HRSUtil;
 import org.openmrs.module.reporting.data.visit.EvaluatedVisitData;
 import org.openmrs.module.reporting.data.visit.definition.VisitDataDefinition;
@@ -18,8 +17,8 @@ import java.util.Map;
 /**
  * Evaluates a VisitIdDataDefinition to produce a VisitData
  */
-@Handler(supports=VisitDateCreatedDataDefinition.class, order=50)
-public class VisitDateCreatedDataEvaluator implements VisitDataEvaluator {
+@Handler(supports=DateCreatedDataDefinition.class, order=50)
+public class DateCreatedDataEvaluator implements VisitDataEvaluator {
 
     @Autowired
     private EvaluationService evaluationService;
@@ -27,12 +26,13 @@ public class VisitDateCreatedDataEvaluator implements VisitDataEvaluator {
     public EvaluatedVisitData evaluate(VisitDataDefinition definition, EvaluationContext context) throws EvaluationException {
         EvaluatedVisitData c = new EvaluatedVisitData(definition, context);
 
-        String qry = "select v.visit_id, o.value_numeric"
-                        + " from visit v "
-                        + " inner join encounter e on e.visit_id = v.visit_id "
-                        + " inner join obs o on o.encounter_id = e.encounter_id and o.voided=0 "
-                        + " where o.concept_id in(5497, 730) "
-                        + " and v.date_started :startDate  ";
+        String qry = "SELECT " +
+                " v.visit_id, " +
+                " o.date_created " +
+                " FROM visit v " +
+                " INNER JOIN encounter e ON e.visit_id=v.visit_id " +
+                " INNER JOIN obs o on o.encounter_id=e.encounter_id " +
+                " where o.concept_id in(5497,730,856) ";
 
         //we want to restrict visits to those for patients in question
         qry = qry + " and v.visit_id in (";
@@ -41,8 +41,10 @@ public class VisitDateCreatedDataEvaluator implements VisitDataEvaluator {
 
         SqlQueryBuilder queryBuilder = new SqlQueryBuilder();
         queryBuilder.append(qry);
-        queryBuilder.addParameter("startDate", context.getParameterValue("startDate"));
+        queryBuilder.addParameter("effectiveDate", HRSUtil.getReportEffectiveDate());
+        queryBuilder.addParameter("endDate", HRSUtil.getReportEndDate());
         queryBuilder.addParameter("patientIds", HRSUtil.getReportCohort());
+        System.out.println("Completed processing Date record created");
         Map<Integer, Object> data = evaluationService.evaluateToMap(queryBuilder, Integer.class, Object.class, context);
         c.setData(data);
         return c;

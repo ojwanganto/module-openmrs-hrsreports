@@ -1,8 +1,7 @@
 package org.openmrs.module.hrsreports.api.reporting.definition.data.evaluator;
 
 import org.openmrs.annotation.Handler;
-import org.openmrs.module.hrsreports.api.reporting.definition.data.VisitCD4DataDefinition;
-import org.openmrs.module.hrsreports.api.reporting.definition.data.VisitViralLoadDataDefinition;
+import org.openmrs.module.hrsreports.api.reporting.definition.data.NextVisitDateDataDefinition;
 import org.openmrs.module.hrsreports.api.util.HRSUtil;
 import org.openmrs.module.reporting.data.visit.EvaluatedVisitData;
 import org.openmrs.module.reporting.data.visit.definition.VisitDataDefinition;
@@ -18,8 +17,8 @@ import java.util.Map;
 /**
  * Evaluates a VisitIdDataDefinition to produce a VisitData
  */
-@Handler(supports=VisitViralLoadDataDefinition.class, order=50)
-public class VisitViralLoadDataEvaluator implements VisitDataEvaluator {
+@Handler(supports=NextVisitDateDataDefinition.class, order=50)
+public class NextVisitDateDataEvaluator implements VisitDataEvaluator {
 
     @Autowired
     private EvaluationService evaluationService;
@@ -27,12 +26,12 @@ public class VisitViralLoadDataEvaluator implements VisitDataEvaluator {
     public EvaluatedVisitData evaluate(VisitDataDefinition definition, EvaluationContext context) throws EvaluationException {
         EvaluatedVisitData c = new EvaluatedVisitData(definition, context);
 
-        String qry = "select v.visit_id, o.value_numeric"
+        String qry = "select v.visit_id, DATE(o.value_datetime)"
                         + " from visit v "
                         + " inner join encounter e on e.visit_id = v.visit_id "
                         + " inner join obs o on o.encounter_id = e.encounter_id and o.voided=0 "
-                        + " where o.concept_id in(856) "
-                        + " and v.date_started > :startDate  ";
+                        + " where o.concept_id in(5096) ";
+                       // + " and v.date_started > :startDate  ";
 
         //we want to restrict visits to those for patients in question
         qry = qry + " and v.visit_id in (";
@@ -41,10 +40,12 @@ public class VisitViralLoadDataEvaluator implements VisitDataEvaluator {
 
         SqlQueryBuilder queryBuilder = new SqlQueryBuilder();
         queryBuilder.append(qry);
-        queryBuilder.addParameter("startDate", context.getParameterValue("startDate"));
+        queryBuilder.addParameter("effectiveDate", HRSUtil.getReportEffectiveDate());
+        queryBuilder.addParameter("endDate", HRSUtil.getReportEndDate());
         queryBuilder.addParameter("patientIds", HRSUtil.getReportCohort());
         Map<Integer, Object> data = evaluationService.evaluateToMap(queryBuilder, Integer.class, Object.class, context);
         c.setData(data);
+        System.out.println("Completed processing Next visit Date");
         return c;
     }
 }
