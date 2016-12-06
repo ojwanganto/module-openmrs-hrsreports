@@ -55,22 +55,23 @@
     <bean id="hrsreports.config.report" class="org.openmrs.module.kenyacore.report.ReportConfiguration">
         <property name="commonReports">
             <set>
-                <ref bean="hrsreports.common.report.hrsstudyvariablereport" />
+                <!--<ref bean="hrsreports.common.report.hrsstudyvariablereport" />-->
+				<ref bean="hrsreports.common.report.flatMOH731Report" />
             </set>
         </property>
     </bean>
 
 
-    <bean id="hrsreports.app.reports" factory-bean="kenyacore.appFactoryBean" factory-method="createInstance">
+    <!--<bean id="hrsreports.app.reports" factory-bean="kenyacore.appFactoryBean" factory-method="createInstance">
         <constructor-arg value="hrsreports.reports" />
         <constructor-arg value="HRS Report Configuration" />
         <constructor-arg value="hrsreports/cohortImport.page" />
         <constructor-arg value="hrsreports:apps/hrs_report-icon.gif" />
         <constructor-arg value="1100000" />
-    </bean>
+    </bean>-->
 
     <!--Add reports here -->
-    <bean id="hrsreports.common.report.hrsstudyvariablereport" class="org.openmrs.module.kenyacore.report.HybridReportDescriptor">
+    <!--<bean id="hrsreports.common.report.hrsstudyvariablereport" class="org.openmrs.module.kenyacore.report.HybridReportDescriptor">
         <property name="targetUuid" value="e2cac59f-2d83-11e5-942f-000c29853f9c" />
         <property name="name" value="HRS Study Report" />
         <property name="description" value="Report for HRS Study" />
@@ -80,6 +81,17 @@
             </set></property>
         <property name="template" value="hrsreports:hrsreport.xls" />
         <property name="repeatingSection" value="sheet:1,row:6,dataset:VisitInformation" />
-    </bean>
+    </bean>-->
+
+	<bean id="hrsreports.common.report.flatMOH731Report" class="org.openmrs.module.kenyacore.report.HybridReportDescriptor">
+		<property name="targetUuid" value="6f857996-a96d-42c5-8863-b66c215d8f6d" />
+		<property name="name" value="Flat MOH 731 Report" />
+		<property name="description" value="Optimized MOH 731 Report" />
+		<property name="apps">
+			<set>
+				<ref bean="kenyaemr.app.reports" />
+			</set></property>
+		<property name="template" value="hrsreports:moh_731.xls" />
+	</bean>
 	
 </beans>

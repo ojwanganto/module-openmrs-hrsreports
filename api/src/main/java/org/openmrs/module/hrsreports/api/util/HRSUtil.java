@@ -30,7 +30,7 @@ public class HRSUtil {
     private static final String COMMA_DELIMITER = ",";
     private static final int EFFECTIVE_DATE_INDEX = 0;
     private static final int END_DATE_INDEX = 1;
-    public static Set<Long> getReportCohort() {
+    public static Set<String> getReportCohort() {
         if (processCSVFile() == null)
             return defaultCohort();
         return processCSVFile().getPatientIds();
@@ -80,7 +80,7 @@ public class HRSUtil {
         }
         String line;
         CohortFile cohortFile = new CohortFile();
-        Set<Long> ids = new HashSet<Long>();
+        Set<String> ids = new HashSet<String>();
 
         try {
             while ((line = bufferedReader.readLine()) != null) //we know it is one line
@@ -99,7 +99,8 @@ public class HRSUtil {
                 }
 
                 for (int i=2; i < fileBlocks.length; i++) {
-                    Long id = Long.valueOf(fileBlocks[i].trim());
+                    //Long id = Long.valueOf(fileBlocks[i].trim());
+                    String id =  fileBlocks[i].trim();
                     ids.add(id);
                 }
                 cohortFile.setPatientIds(ids);
@@ -111,7 +112,7 @@ public class HRSUtil {
         return cohortFile;
     }
 
-    private static Set<Long> defaultCohort() {
+    private static Set<String> defaultCohort() {
         String qry = "select pi.identifier from visit v "
                 + " inner join encounter e on e.visit_id=v.visit_id and e.voided=0 and e.encounter_type in(7,8) "
                 + " inner join patient_identifier pi on pi.patient_id=v.patient_id and pi.identifier_type=3 "
@@ -121,11 +122,11 @@ public class HRSUtil {
         Map<String, Object> m = new HashMap<String, Object>();
         m.put("effectiveDate", getDefaultDate());
         List<Object> data = Context.getService(KenyaEmrService.class).executeSqlQuery(qry, m);
-        Set<Long> idSet = new HashSet<Long>();
+        Set<String> idSet = new HashSet<String>();
         for (Object o : data) {
             String str = (String) o;
-            Long ptId = Long.parseLong(str);
-            idSet.add(ptId);
+            //Long ptId = Long.parseLong(str);
+            idSet.add(str);
         }
         return idSet;
     }
