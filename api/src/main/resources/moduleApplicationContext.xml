@@ -83,7 +83,7 @@
         <property name="repeatingSection" value="sheet:1,row:6,dataset:VisitInformation" />
     </bean>-->
 
-	<bean id="hrsreports.common.report.flatMOH731Report" class="org.openmrs.module.kenyacore.report.HybridReportDescriptor">
+	<bean id="hrsreports.common.report.flatMOH731Report" class="org.openmrs.module.kenyacore.report.IndicatorReportDescriptor">
 		<property name="targetUuid" value="6f857996-a96d-42c5-8863-b66c215d8f6d" />
 		<property name="name" value="Flat MOH 731 Report" />
 		<property name="description" value="Optimized MOH 731 Report" />
@@ -93,5 +93,6 @@
 			</set></property>
 		<property name="template" value="hrsreports:moh_731.xls" />
 	</bean>
+
 	
 </beans>
