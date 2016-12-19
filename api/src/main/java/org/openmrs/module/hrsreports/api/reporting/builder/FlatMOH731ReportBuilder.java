@@ -86,7 +86,13 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
                 ReportUtils.map(mchEligibilityAssessment(), "startDate=${startDate},endDate=${endDate}"),
                 ReportUtils.map(mchKnownPositive(), "startDate=${startDate},endDate=${endDate}"),
                 ReportUtils.map(mchMaleInvolvement(), "startDate=${startDate},endDate=${endDate}"),
-                ReportUtils.map(mchTotalTested(), "startDate=${startDate},endDate=${endDate}")
+                ReportUtils.map(mchTotalTested(), "startDate=${startDate},endDate=${endDate}"),
+                ReportUtils.map(hivTesting(), "startDate=${startDate},endDate=${endDate}"),
+                ReportUtils.map(hivTestingKnownPositive(), "startDate=${startDate},endDate=${endDate}"),
+                ReportUtils.map(onTherapy(), "startDate=${startDate},endDate=${endDate}"),
+                ReportUtils.map(netCohort(), "startDate=${startDate},endDate=${endDate}"),
+                ReportUtils.map(infantTestingInitial(), "startDate=${startDate},endDate=${endDate}"),
+                ReportUtils.map(infantFeeding(), "startDate=${startDate},endDate=${endDate}")
 
         );
     }
@@ -507,5 +513,157 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
     }
 
+
+
+    protected DataSetDefinition hivTesting() {
+
+        String testQuery = "  select count(distinct e.patient_id) as 'HV02-04', " +
+        "  count(distinct if(anc.patient_id is not null, anc.patient_id,null)) as 'HV02-01', " +
+        "  count(distinct if(ld.patient_id is not null and anc.patient_id is null, ld.patient_id,null)) as 'HV02-02', " +
+        "  count(distinct if(panc.patient_id is not null and anc.patient_id is null and ld.patient_id is null, panc.patient_id,null)) as 'HV02-03' " +
+        "    from kenyaemr_etl.etl_mch_enrollment e " +
+                "    left outer join kenyaemr_etl.etl_mch_antenatal_visit anc on anc.patient_id=e.patient_id " +
+        "    left outer join kenyaemr_etl.etl_mchs_delivery ld on ld.patient_id=e.patient_id " +
+        "    left outer join kenyaemr_etl.etl_mch_postnatal_visit panc on panc.patient_id=e.patient_id " +
+        "    where date(hiv_test_date) between :startDate and :endDate; ";
+        SqlDataSetDefinition ds = new SqlDataSetDefinition();
+        ds.setName("2");
+        ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        ds.addParameter(new Parameter("endDate", "End Date", Date.class));
+        ds.setSqlQuery(testQuery);
+        ds.setDescription("Hiv Testing");
+
+
+        return ds;
+
+    }
+
+    protected DataSetDefinition hivTestingKnownPositive() {
+
+        String testQuery = "  select count(distinct if (e.visit_date>hiv_test_date,e.patient_id,null)) as 'HV02-10', " +
+                "  count(distinct if (ld.patient_id is not null and e.visit_date>hiv_test_date and anc.patient_id is null,ld.patient_id,null)) as 'HV02-06', " +
+                "  count(distinct if (ld.patient_id is not null and e.visit_date>hiv_test_date and anc.patient_id is null,ld.patient_id,null)) as 'HV02-07', " +
+                "  count(distinct if (panc.patient_id is not null and e.visit_date>hiv_test_date and anc.patient_id is null and ld.patient_id is null,panc.patient_id,null)) as 'HV02-08' " +
+                "    from kenyaemr_etl.etl_mch_enrollment e " +
+                "    left outer join kenyaemr_etl.etl_mch_antenatal_visit anc on anc.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_mchs_delivery ld on ld.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_mch_postnatal_visit panc on panc.patient_id=e.patient_id " +
+                "    where hiv_status=703 and e.visit_date between :startDate and :endDate; ";
+        SqlDataSetDefinition ds = new SqlDataSetDefinition();
+        ds.setName("KP");
+        ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        ds.addParameter(new Parameter("endDate", "End Date", Date.class));
+        ds.setSqlQuery(testQuery);
+        ds.setDescription("Hiv Testing Known Positive");
+
+        return ds;
+
+    }
+
+    protected DataSetDefinition infantTestingInitial() {
+
+        String testQuery = "select  count(distinct if(timestampdiff(month,p.dob,:endDate)<=2,e.patient_id,null)) as 'HV02-24', " +
+                "  count(distinct if(timestampdiff(month,p.dob,:endDate) between 3 and 8,e.patient_id,null)) as 'HV02-25', " +
+                "  count(distinct if(timestampdiff(month,p.dob,:endDate) between 9 and 12,e.patient_id,null)) as 'HV02-26', " +
+                "  count(distinct if(timestampdiff(month,p.dob,:endDate)<=12,e.patient_id,null)) as 'HV02-27' " +
+                "    from kenyaemr_etl.etl_hei_follow_up_visit e " +
+                "    join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "    where dna_pcr_result is not null and " +
+                "    (e.visit_date between :startDate and :endDate); ";
+        SqlDataSetDefinition ds = new SqlDataSetDefinition();
+        ds.setName("InfantTestingInitial");
+        ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        ds.addParameter(new Parameter("endDate", "End Date", Date.class));
+        ds.setSqlQuery(testQuery);
+        ds.setDescription("Infant Testing initial tests only");
+
+        return ds;
+
+    }
+
+    //we will need to revise this
+    protected DataSetDefinition netCohort() {
+
+        String testQuery = "  select count(distinct net.patient_id) as 'HV03-45', " +
+                "  count(distinct if(net.regimen_line='1st Line' and net.alternative_regimen=0,net.patient_id,null)) as 'HV03-46', " +
+                "  count(distinct if(net.regimen_line='1st Line' and net.alternative_regimen=1,net.patient_id,null)) as 'HV03-47', " +
+                "  count(distinct if(net.regimen_line='2nd Line',net.patient_id,null)) as 'HV03-48',  "+
+                "  count(distinct if(datediff(latest_tca,'2015-01-31')<=90,net.patient_id,null)) as on_therapy  " +
+                "  from ( " +
+                "  select e.patient_id,e.date_started, e.gender,e.dob,d.visit_date as dis_date, if(d.visit_date is not null, 1, 0) as TOut," +
+                "   e.regimen, e.regimen_line, e.alternative_regimen, max(fup.next_appointment_date) as latest_tca, "+
+                "  if(enr.transfer_in_date is not null, 1, 0) as TIn, max(fup.visit_date) as latest_vis_date" +
+                "    from (select e.patient_id,p.dob,p.Gender,min(e.date_started) as date_started, " +
+                "    mid(min(concat(e.date_started,e.regimen_name)),11) as regimen, " +
+                "    mid(min(concat(e.date_started,e.regimen_line)),11) as regimen_line, " +
+                "    max(if(discontinued,1,0))as alternative_regimen " +
+                "    from kenyaemr_etl.etl_drug_event e " +
+                "    join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "    group by e.patient_id) e " +
+                "    left outer join kenyaemr_etl.etl_patient_program_discontinuation d on d.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_patient_hiv_followup fup on fup.patient_id=e.patient_id " +
+                "    where  date(e.date_started) between date_sub(:startDate , interval 1 year) and date_sub(:endDate , interval 1 year) " +
+                "    group by e.patient_id " +
+                "    having   (dis_date>:endDate or dis_date is null) )net; ";
+        SqlDataSetDefinition ds = new SqlDataSetDefinition();
+        ds.setName("3");
+        ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        ds.addParameter(new Parameter("endDate", "End Date", Date.class));
+        ds.setSqlQuery(testQuery);
+        ds.setDescription("Net Cohort");
+
+        return ds;
+
+    }
+
+    protected DataSetDefinition onTherapy() {
+
+        String testQuery = "  select count(distinct net.patient_id) as On_Therapy " +
+                "  from (" +
+                "  select e.patient_id,e.date_started, p.gender,p.dob,d.visit_date as dis_date, if(d.visit_date is not null, 1, 0) as TOut," +
+                "  if(enr.transfer_in_date is not null, 1, 0) as TIn, max(fup.visit_date) as latest_vis_date, max(fup.next_appointment_date) as latest_tca" +
+                "    from kenyaemr_etl.etl_drug_event e " +
+                "    join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_patient_program_discontinuation d on d.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_patient_hiv_followup fup on fup.patient_id=e.patient_id " +
+                "    where  date(e.date_started) between date_sub(:startDate , interval 1 year) and date_sub(:endDate , interval 1 year) " +
+                "    group by e.patient_id " +
+                "    having   (dis_date>:endDate or dis_date is null) and (datediff(latest_tca,:endDate)<=90))net; ";
+        SqlDataSetDefinition ds = new SqlDataSetDefinition();
+        ds.setName("onTherapy");
+        ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        ds.addParameter(new Parameter("endDate", "End Date", Date.class));
+        ds.setSqlQuery(testQuery);
+        ds.setDescription("on Therapy");
+
+        return ds;
+
+    }
+
+
+    protected DataSetDefinition infantFeeding(){
+        String testQuery = "  Select count(distinct if(timestampdiff(month,d.dob,:endDate)<=6 and o.baby_feeding_method=5526,o.patient_id,null)) as 'EBF (at 6 months)', " +
+                " count(distinct if(timestampdiff(month,d.dob,:endDate)<=6 and o.baby_feeding_method=1595,o.patient_id,null)) as 'ERF (at 6 months)', " +
+                " count(distinct if(timestampdiff(month,d.dob,:endDate)<=6 and o.baby_feeding_method=6046,o.patient_id,null)) as 'MF (at 6 months)',  " +
+                " count(distinct if(timestampdiff(month,d.dob,:endDate)<=12,o.patient_id,null)) as 'BF (12 months)', " +
+                " count(distinct if(timestampdiff(month,d.dob,:endDate)<=12 and o.baby_feeding_method is null,o.patient_id,null)) as 'BF (Not Known)', " +
+                " count(distinct if(timestampdiff(month,d.dob,:endDate)<=12,o.patient_id,null)) as 'Total_Exposed' " +
+                " from kenyaemr_etl.etl_mch_postnatal_visit o " +
+                " join kenyaemr_etl.etl_hei_enrollment e on e.patient_id=o.patient_id " +
+                " join kenyaemr_etl.etl_patient_demographics d on d.patient_id = o.patient_id " +
+                " where  " +
+                "  date(o.visit_date) between :startDate and :endDate ;" ;
+
+        SqlDataSetDefinition ds = new SqlDataSetDefinition();
+        ds.setName("infantFeeding");
+        ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        ds.addParameter(new Parameter("endDate", "End Date", Date.class));
+        ds.setSqlQuery(testQuery);
+        ds.setDescription("Infant Feeding");
+
+        return ds;
+    }
 
 }
