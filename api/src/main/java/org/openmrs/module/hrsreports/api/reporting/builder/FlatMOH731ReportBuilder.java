@@ -67,8 +67,8 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
                 ReportUtils.map(hivTestingKnownPositive(), "startDate=${startDate},endDate=${endDate}"),
                 ReportUtils.map(onTherapy(), "startDate=${startDate},endDate=${endDate}"),
                 ReportUtils.map(netCohort(), "startDate=${startDate},endDate=${endDate}"),
-                ReportUtils.map(infantTestingInitial(), "startDate=${startDate},endDate=${endDate}")
-
+                ReportUtils.map(infantTestingInitial(), "startDate=${startDate},endDate=${endDate}"),
+                ReportUtils.map(infantFeeding(), "startDate=${startDate},endDate=${endDate}")
         );
     }
 
@@ -487,17 +487,40 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
     }
 
+
+    protected DataSetDefinition infantTestingInitial() {
+
+        String testQuery = "select  count(distinct if(timestampdiff(month,p.dob,:endDate)<=2,e.patient_id,null)) as 'HV02-24', " +
+                "  count(distinct if(timestampdiff(month,p.dob,:endDate) between 3 and 8,e.patient_id,null)) as 'HV02-25', " +
+                "  count(distinct if(timestampdiff(month,p.dob,:endDate) between 9 and 12,e.patient_id,null)) as 'HV02-26', " +
+                "  count(distinct if(timestampdiff(month,p.dob,:endDate)<=12,e.patient_id,null)) as 'HV02-27' " +
+                "    from kenyaemr_etl.etl_hei_follow_up_visit e " +
+                "    join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "    where dna_pcr_result is not null and " +
+                "    (e.visit_date between :startDate and :endDate); ";
+        SqlDataSetDefinition ds = new SqlDataSetDefinition();
+        ds.setName("InfantTestingInitial");
+        ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        ds.addParameter(new Parameter("endDate", "End Date", Date.class));
+        ds.setSqlQuery(testQuery);
+        ds.setDescription("Infant Testing initial tests only");
+
+        return ds;
+
+    }
+
+
     protected DataSetDefinition hivTesting() {
 
         String testQuery = "  select count(distinct e.patient_id) as 'HV02-04', " +
-                "  count(distinct if(anc.patient_id is not null, anc.patient_id,null)) as 'HV02-01', " +
-                "  count(distinct if(ld.patient_id is not null and anc.patient_id is null, ld.patient_id,null)) as 'HV02-02', " +
-                "  count(distinct if(panc.patient_id is not null and anc.patient_id is null and ld.patient_id is null, panc.patient_id,null)) as 'HV02-03' " +
-                "    from kenyaemr_etl.etl_mch_enrollment e " +
+        "  count(distinct if(anc.patient_id is not null, anc.patient_id,null)) as 'HV02-01', " +
+        "  count(distinct if(ld.patient_id is not null and anc.patient_id is null, ld.patient_id,null)) as 'HV02-02', " +
+        "  count(distinct if(panc.patient_id is not null and anc.patient_id is null and ld.patient_id is null, panc.patient_id,null)) as 'HV02-03' " +
+        "    from kenyaemr_etl.etl_mch_enrollment e " +
                 "    left outer join kenyaemr_etl.etl_mch_antenatal_visit anc on anc.patient_id=e.patient_id " +
-                "    left outer join kenyaemr_etl.etl_mchs_delivery ld on ld.patient_id=e.patient_id " +
-                "    left outer join kenyaemr_etl.etl_mch_postnatal_visit panc on panc.patient_id=e.patient_id " +
-                "    where date(hiv_test_date) between :startDate and :endDate; ";
+        "    left outer join kenyaemr_etl.etl_mchs_delivery ld on ld.patient_id=e.patient_id " +
+        "    left outer join kenyaemr_etl.etl_mch_postnatal_visit panc on panc.patient_id=e.patient_id " +
+        "    where date(hiv_test_date) between :startDate and :endDate; ";
         SqlDataSetDefinition ds = new SqlDataSetDefinition();
         ds.setName("2");
         ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
@@ -532,27 +555,8 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
     }
 
-    protected DataSetDefinition infantTestingInitial() {
 
-        String testQuery = "select  count(distinct if(timestampdiff(month,p.dob,:endDate)<=2,e.patient_id,null)) as 'HV02-24', " +
-                "  count(distinct if(timestampdiff(month,p.dob,:endDate) between 3 and 8,e.patient_id,null)) as 'HV02-25', " +
-                "  count(distinct if(timestampdiff(month,p.dob,:endDate) between 9 and 12,e.patient_id,null)) as 'HV02-26', " +
-                "  count(distinct if(timestampdiff(month,p.dob,:endDate)<=12,e.patient_id,null)) as 'HV02-27' " +
-                "    from kenyaemr_etl.etl_hei_follow_up_visit e " +
-                "    join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
-                "    where dna_pcr_result is not null and " +
-                "    (e.visit_date between :startDate and :endDate); ";
-        SqlDataSetDefinition ds = new SqlDataSetDefinition();
-        ds.setName("InfantTestingInitial");
-        ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
-        ds.addParameter(new Parameter("endDate", "End Date", Date.class));
-        ds.setSqlQuery(testQuery);
-        ds.setDescription("Infant Testing initial tests only");
-
-        return ds;
-
-    }
-
+    //we will need to revise this
     protected DataSetDefinition netCohort() {
 
         String testQuery = "  select count(distinct net.patient_id) as 'HV03-45', " +
@@ -613,19 +617,19 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
     }
 
+
     protected DataSetDefinition infantFeeding(){
-        String testQuery = "  Select count(distinct if(timestampdiff(month,d.dob,:endDate)<=6 and o.value_coded=5526,o.person_id,null)) as 'EBF (at 6 months)', " +
-                " count(distinct if(timestampdiff(month,d.dob,:endDate)<=6 and o.value_coded=1595,o.person_id,null)) as 'ERF (at 6 months)', " +
-                " count(distinct if(timestampdiff(month,d.dob,:endDate)<=6 and o.value_coded=6046,o.person_id,null)) as 'MF (at 6 months)',  " +
-                " count(distinct if(timestampdiff(month,d.dob,:endDate)<=12,o.person_id,null)) as 'BF (12 months)', " +
-                " count(distinct if(timestampdiff(month,d.dob,:endDate)<=12 and o.value_coded is null,o.person_id,null)) as 'BF (Not Known)', " +
-                " count(distinct if(timestampdiff(month,d.dob,:endDate)<=12,o.person_id,null)) as 'Total_Exposed' " +
-                " from kenyaemr.obs o " +
-                " join kenyaemr_etl.etl_hei_enrollment e on e.patient_id=o.person_id " +
-                " join kenyaemr_etl.etl_patient_demographics d on d.patient_id = o.person_id " +
-                " where o.concept_id=1151 " +
-                " and date(o.obs_datetime) between :startDate and :endDate " +
-                " and o.voided=0; ";
+        String testQuery = "  Select count(distinct if(timestampdiff(month,d.dob,:endDate)<=6 and o.baby_feeding_method=5526,o.patient_id,null)) as 'EBF (at 6 months)', " +
+                " count(distinct if(timestampdiff(month,d.dob,:endDate)<=6 and o.baby_feeding_method=1595,o.patient_id,null)) as 'ERF (at 6 months)', " +
+                " count(distinct if(timestampdiff(month,d.dob,:endDate)<=6 and o.baby_feeding_method=6046,o.patient_id,null)) as 'MF (at 6 months)',  " +
+                " count(distinct if(timestampdiff(month,d.dob,:endDate)<=12,o.patient_id,null)) as 'BF (12 months)', " +
+                " count(distinct if(timestampdiff(month,d.dob,:endDate)<=12 and o.baby_feeding_method is null,o.patient_id,null)) as 'BF (Not Known)', " +
+                " count(distinct if(timestampdiff(month,d.dob,:endDate)<=12,o.patient_id,null)) as 'Total_Exposed' " +
+                " from kenyaemr_etl.etl_mch_postnatal_visit o " +
+                " join kenyaemr_etl.etl_hei_enrollment e on e.patient_id=o.patient_id " +
+                " join kenyaemr_etl.etl_patient_demographics d on d.patient_id = o.patient_id " +
+                " where  " +
+                "  date(o.visit_date) between :startDate and :endDate ;" ;
 
         SqlDataSetDefinition ds = new SqlDataSetDefinition();
         ds.setName("infantFeeding");
@@ -636,6 +640,5 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
         return ds;
     }
-
 
 }
