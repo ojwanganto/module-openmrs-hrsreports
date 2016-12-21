@@ -181,7 +181,7 @@ from encounter e
 join patient p on p.patient_id=e.patient_id and p.voided=0
 left outer join obs o on o.encounter_id=e.encounter_id 
 	and o.concept_id in (160555,160540,160534,160535,161551,159599,160554,160632,160533,160638,160640,160642,160641)
-where e.voided=0 and e.encounter_type=3 and e.form_id=13
+where e.voided=0 and e.encounter_type=3
 group by e.patient_id, e.encounter_id
 order by e.patient_id;
 
@@ -288,7 +288,7 @@ from encounter e
 left outer join obs o on o.encounter_id=e.encounter_id 
 	and o.concept_id in (1246,161643,5089,5085,5086,5090,5088,5087,5242,5092,1343,5356,5272,161033,161655,5596,1427,5624,1053,160653,374,160575,1659,161654,161652,162229,162230,1658,160582,160632,159423,161557,159777,161558,160581,5096)
 where e.voided=0 and e.encounter_type in (4,7,10)
-group by e.patient_id, e.encounter_id, visit_date;
+group by e.patient_id, visit_date;
 
 END$$
 DELIMITER ;

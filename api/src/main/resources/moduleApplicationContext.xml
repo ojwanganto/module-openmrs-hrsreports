@@ -91,7 +91,7 @@
 			<set>
 				<ref bean="kenyaemr.app.reports" />
 			</set></property>
-		<property name="template" value="hrsreports:moh_731.xls" />
+		<property name="template" value="hrsreports:moh_731_2.xls" />
 	</bean>
 
 	
