@@ -282,7 +282,7 @@ public class FlatMoh731CohortLibrary {
                 "    left outer join kenyaemr_etl.etl_patient_hiv_followup fup on fup.patient_id=e.patient_id " +
                 "    where  date(e.date_started) between date_sub(:startDate , interval 1 year) and date_sub(:endDate , interval 1 year) " +
                 "    group by e.patient_id " +
-                "    having   (dis_date>:endDate or dis_date is null) and (net.regimen_line='1st Line' and net.alternative_regimen=0) )net; ";
+                "    having   (dis_date>:endDate or dis_date is null) and (regimen_line='1st Line' and alternative_regimen=0) )net; ";
         SqlCohortDefinition cd = new SqlCohortDefinition();
         cd.setName("onOriginalFirstLineAt12Months");
         cd.setQuery(sqlQuery);
@@ -312,7 +312,7 @@ public class FlatMoh731CohortLibrary {
                 "    left outer join kenyaemr_etl.etl_patient_hiv_followup fup on fup.patient_id=e.patient_id " +
                 "    where  date(e.date_started) between date_sub(:startDate , interval 1 year) and date_sub(:endDate , interval 1 year) " +
                 "    group by e.patient_id " +
-                "    having   (dis_date>:endDate or dis_date is null) and (net.regimen_line='1st Line' and net.alternative_regimen=1) )net; ";
+                "    having   (dis_date>:endDate or dis_date is null) and (regimen_line='1st Line' and alternative_regimen=1) )net; ";
         SqlCohortDefinition cd = new SqlCohortDefinition();
         cd.setName("onAlternateFirstLineAt12Months");
         cd.setQuery(sqlQuery);
@@ -342,7 +342,7 @@ public class FlatMoh731CohortLibrary {
                 "    left outer join kenyaemr_etl.etl_patient_hiv_followup fup on fup.patient_id=e.patient_id " +
                 "    where  date(e.date_started) between date_sub(:startDate , interval 1 year) and date_sub(:endDate , interval 1 year) " +
                 "    group by e.patient_id " +
-                "    having   (dis_date>:endDate or dis_date is null) and (net.regimen_line='2nd Line') )net; ";
+                "    having   (dis_date>:endDate or dis_date is null) and (regimen_line='2nd Line') )net; ";
         SqlCohortDefinition cd = new SqlCohortDefinition();
         cd.setName("onSecondLineAt12Months");
         cd.setQuery(sqlQuery);
