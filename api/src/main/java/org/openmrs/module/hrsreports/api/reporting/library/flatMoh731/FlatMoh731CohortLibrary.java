@@ -2,6 +2,8 @@ package org.openmrs.module.hrsreports.api.reporting.library.flatMoh731;
 
 import org.openmrs.module.reporting.cohort.definition.CohortDefinition;
 import org.openmrs.module.reporting.cohort.definition.SqlCohortDefinition;
+import org.openmrs.module.reporting.dataset.definition.DataSetDefinition;
+import org.openmrs.module.reporting.dataset.definition.SqlDataSetDefinition;
 import org.openmrs.module.reporting.evaluation.parameter.Parameter;
 import org.springframework.stereotype.Component;
 
@@ -175,5 +177,204 @@ public class FlatMoh731CohortLibrary {
         cd.addParameter(new Parameter("endDate", "End Date", Date.class));
         cd.setDescription("Cummulative ever on ART");
         return cd;
+    }
+
+    protected CohortDefinition startingARTPregnant() {
+
+        String sqlQuery = " select distinct fup.patient_id " +
+                "from kenyaemr_etl.etl_patient_hiv_followup fup " +
+                "join (select * from kenyaemr_etl.etl_drug_event e " +
+                "where date_started between :startDate and :endDate) started_art on  " +
+                "started_art.patient_id = fup.patient_id " +
+                "where fup.pregnancy_status =1065 " +
+                "and fup.visit_date between :startDate and :endDate;";
+
+        SqlCohortDefinition cd = new SqlCohortDefinition();
+        cd.setName("startingARTPregnant");
+        cd.setQuery(sqlQuery);
+        cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        cd.addParameter(new Parameter("endDate", "End Date", Date.class));
+        cd.setDescription("Pregnant Women Started on ART");
+        return cd;
+
+    }
+
+    protected CohortDefinition tbScreening() {
+
+        String sqlQuery = " select tb.patient_id " +
+                "from kenyaemr_etl.etl_tb_screening tb " +
+                "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=tb.patient_id " +
+                "where  date(tb.visit_date) between :startDate and :endDate;";
+        SqlCohortDefinition cd = new SqlCohortDefinition();
+        cd.setName("tbScreening");
+        cd.setQuery(sqlQuery);
+        cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        cd.addParameter(new Parameter("endDate", "End Date", Date.class));
+        cd.setDescription("Screened for TB");
+        return cd;
+
+    }
+
+    protected CohortDefinition pwp() {
+
+        String sqlQuery = " select count(distinct if(family_planning_method is not null  " +
+                "and family_planning_method<>190,e.patient_id,null)) as modern_contraceptives, " +
+                "count(distinct if(condom_provided=1065,e.patient_id,null)) as provided_with_condoms " +
+                "from kenyaemr_etl.etl_patient_hiv_followup e " +
+                "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "where  date(e.visit_date) between :startDate and :endDate;";
+        SqlCohortDefinition cd = new SqlCohortDefinition();
+        cd.setName("pwp");
+        cd.setQuery(sqlQuery);
+        cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        cd.addParameter(new Parameter("endDate", "End Date", Date.class));
+        cd.setDescription("Prevention with Positives");
+        return cd;
+    }
+
+
+    protected CohortDefinition art12MonthNetCohort() {
+
+        String sqlQuery = "  select distinct net.patient_id " +
+                "  from ( " +
+                "  select e.patient_id,e.date_started, e.gender,e.dob,d.visit_date as dis_date, if(d.visit_date is not null, 1, 0) as TOut," +
+                "   e.regimen, e.regimen_line, e.alternative_regimen, max(fup.next_appointment_date) as latest_tca, "+
+                "  if(enr.transfer_in_date is not null, 1, 0) as TIn, max(fup.visit_date) as latest_vis_date" +
+                "    from (select e.patient_id,p.dob,p.Gender,min(e.date_started) as date_started, " +
+                "    mid(min(concat(e.date_started,e.regimen_name)),11) as regimen, " +
+                "    mid(min(concat(e.date_started,e.regimen_line)),11) as regimen_line, " +
+                "    max(if(discontinued,1,0))as alternative_regimen " +
+                "    from kenyaemr_etl.etl_drug_event e " +
+                "    join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "    group by e.patient_id) e " +
+                "    left outer join kenyaemr_etl.etl_patient_program_discontinuation d on d.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_patient_hiv_followup fup on fup.patient_id=e.patient_id " +
+                "    where  date(e.date_started) between date_sub(:startDate , interval 1 year) and date_sub(:endDate , interval 1 year) " +
+                "    group by e.patient_id " +
+                "    having   (dis_date>:endDate or dis_date is null) )net; ";
+        SqlCohortDefinition cd = new SqlCohortDefinition();
+        cd.setName("art12MonthNetCohort");
+        cd.setQuery(sqlQuery);
+        cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        cd.addParameter(new Parameter("endDate", "End Date", Date.class));
+        cd.setDescription("art 12 Months Net Cohort");
+        return cd;
+
+    }
+
+    protected CohortDefinition onOriginalFirstLineAt12Months() {
+
+        String sqlQuery = "  select distinct net.patient_id " +
+                "  from ( " +
+                "  select e.patient_id,e.date_started, e.gender,e.dob,d.visit_date as dis_date, if(d.visit_date is not null, 1, 0) as TOut," +
+                "   e.regimen, e.regimen_line, e.alternative_regimen, max(fup.next_appointment_date) as latest_tca, "+
+                "  if(enr.transfer_in_date is not null, 1, 0) as TIn, max(fup.visit_date) as latest_vis_date" +
+                "    from (select e.patient_id,p.dob,p.Gender,min(e.date_started) as date_started, " +
+                "    mid(min(concat(e.date_started,e.regimen_name)),11) as regimen, " +
+                "    mid(min(concat(e.date_started,e.regimen_line)),11) as regimen_line, " +
+                "    max(if(discontinued,1,0))as alternative_regimen " +
+                "    from kenyaemr_etl.etl_drug_event e " +
+                "    join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "    group by e.patient_id) e " +
+                "    left outer join kenyaemr_etl.etl_patient_program_discontinuation d on d.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_patient_hiv_followup fup on fup.patient_id=e.patient_id " +
+                "    where  date(e.date_started) between date_sub(:startDate , interval 1 year) and date_sub(:endDate , interval 1 year) " +
+                "    group by e.patient_id " +
+                "    having   (dis_date>:endDate or dis_date is null) and (net.regimen_line='1st Line' and net.alternative_regimen=0) )net; ";
+        SqlCohortDefinition cd = new SqlCohortDefinition();
+        cd.setName("onOriginalFirstLineAt12Months");
+        cd.setQuery(sqlQuery);
+        cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        cd.addParameter(new Parameter("endDate", "End Date", Date.class));
+        cd.setDescription("on Original FirstLine At 12 Months");
+        return cd;
+
+    }
+
+    protected CohortDefinition onAlternateFirstLineAt12Months() {
+
+        String sqlQuery = "  select distinct net.patient_id " +
+              "  from ( " +
+                "  select e.patient_id,e.date_started, e.gender,e.dob,d.visit_date as dis_date, if(d.visit_date is not null, 1, 0) as TOut," +
+                "   e.regimen, e.regimen_line, e.alternative_regimen, max(fup.next_appointment_date) as latest_tca, "+
+                "  if(enr.transfer_in_date is not null, 1, 0) as TIn, max(fup.visit_date) as latest_vis_date" +
+                "    from (select e.patient_id,p.dob,p.Gender,min(e.date_started) as date_started, " +
+                "    mid(min(concat(e.date_started,e.regimen_name)),11) as regimen, " +
+                "    mid(min(concat(e.date_started,e.regimen_line)),11) as regimen_line, " +
+                "    max(if(discontinued,1,0))as alternative_regimen " +
+                "    from kenyaemr_etl.etl_drug_event e " +
+                "    join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "    group by e.patient_id) e " +
+                "    left outer join kenyaemr_etl.etl_patient_program_discontinuation d on d.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_patient_hiv_followup fup on fup.patient_id=e.patient_id " +
+                "    where  date(e.date_started) between date_sub(:startDate , interval 1 year) and date_sub(:endDate , interval 1 year) " +
+                "    group by e.patient_id " +
+                "    having   (dis_date>:endDate or dis_date is null) and (net.regimen_line='1st Line' and net.alternative_regimen=1) )net; ";
+        SqlCohortDefinition cd = new SqlCohortDefinition();
+        cd.setName("onAlternateFirstLineAt12Months");
+        cd.setQuery(sqlQuery);
+        cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        cd.addParameter(new Parameter("endDate", "End Date", Date.class));
+        cd.setDescription("on Alternate First Line At 12 Months");
+        return cd;
+
+    }
+
+    protected CohortDefinition onSecondLineAt12Months() {
+
+        String sqlQuery = "  select distinct net.patient_id " +
+               "  from ( " +
+                "  select e.patient_id,e.date_started, e.gender,e.dob,d.visit_date as dis_date, if(d.visit_date is not null, 1, 0) as TOut," +
+                "   e.regimen, e.regimen_line, e.alternative_regimen, max(fup.next_appointment_date) as latest_tca, "+
+                "  if(enr.transfer_in_date is not null, 1, 0) as TIn, max(fup.visit_date) as latest_vis_date" +
+                "    from (select e.patient_id,p.dob,p.Gender,min(e.date_started) as date_started, " +
+                "    mid(min(concat(e.date_started,e.regimen_name)),11) as regimen, " +
+                "    mid(min(concat(e.date_started,e.regimen_line)),11) as regimen_line, " +
+                "    max(if(discontinued,1,0))as alternative_regimen " +
+                "    from kenyaemr_etl.etl_drug_event e " +
+                "    join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "    group by e.patient_id) e " +
+                "    left outer join kenyaemr_etl.etl_patient_program_discontinuation d on d.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_patient_hiv_followup fup on fup.patient_id=e.patient_id " +
+                "    where  date(e.date_started) between date_sub(:startDate , interval 1 year) and date_sub(:endDate , interval 1 year) " +
+                "    group by e.patient_id " +
+                "    having   (dis_date>:endDate or dis_date is null) and (net.regimen_line='2nd Line') )net; ";
+        SqlCohortDefinition cd = new SqlCohortDefinition();
+        cd.setName("onSecondLineAt12Months");
+        cd.setQuery(sqlQuery);
+        cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        cd.addParameter(new Parameter("endDate", "End Date", Date.class));
+        cd.setDescription("on Second Line At 12Months");
+        return cd;
+
+    }
+
+    protected CohortDefinition onTherapyAt12Months() {
+
+        String sqlQuery = "  select distinct net.patient_id " +
+                "  from (" +
+                "  select e.patient_id,e.date_started, p.gender,p.dob,d.visit_date as dis_date, if(d.visit_date is not null, 1, 0) as TOut," +
+                "  if(enr.transfer_in_date is not null, 1, 0) as TIn, max(fup.visit_date) as latest_vis_date, max(fup.next_appointment_date) as latest_tca" +
+                "    from kenyaemr_etl.etl_drug_event e " +
+                "    join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_patient_program_discontinuation d on d.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_patient_hiv_followup fup on fup.patient_id=e.patient_id " +
+                "    where  date(e.date_started) between date_sub(:startDate , interval 1 year) and date_sub(:endDate , interval 1 year) " +
+                "    group by e.patient_id " +
+                "    having   (dis_date>:endDate or dis_date is null) and (datediff(latest_tca,:endDate)<=90))net; ";
+
+        SqlCohortDefinition cd = new SqlCohortDefinition();
+        cd.setName("onTherapyAt12Months");
+        cd.setQuery(sqlQuery);
+        cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        cd.addParameter(new Parameter("endDate", "End Date", Date.class));
+        cd.setDescription("on Therapy At 12 Months");
+        return cd;
+
     }
 }

@@ -83,7 +83,27 @@ public class FlatMOH731ReportBuilderRevised extends AbstractReportBuilder {
 
         // 3.4 (Starting ART)
         EmrReportingUtils.addRow(cohortDsd, "HV03", "Starting ART", ReportUtils.map(hivIndicators.startedOnArt(), indParams), allColumns, Arrays.asList("20", "21", "22", "23", "24", "25"));
+        cohortDsd.addColumn("HV03-26", "Starting ART (Pregnant)", ReportUtils.map(hivIndicators.startedArtWhilePregnant(), indParams), "");
 
+        // 3.5 (Revisits ART)
+        EmrReportingUtils.addRow(cohortDsd, "HV03", "Revisits ART", ReportUtils.map(hivIndicators.revisitsArt(), indParams), allColumns, Arrays.asList("28", "29", "30", "31", "32", "33"));
+
+        // 3.6 (Currently on ART [All])
+        EmrReportingUtils.addRow(cohortDsd, "HV03", "Currently on ART [All]", ReportUtils.map(hivIndicators.currentlyOnArt(), indParams), allColumns, Arrays.asList("34", "35", "36", "37", "38", "39"));
+
+
+        // 3.7 (Cumulative Ever on ART)
+        EmrReportingUtils.addRow(cohortDsd, "HV03", "Cumulative ever on ART", ReportUtils.map(hivIndicators.cumulativeOnArt(), indParams), nonInfantColumns, Arrays.asList("40", "41", "42", "43", "44"));
+
+        // 3.8 (Survival and Retention on ART at 12 months)
+        cohortDsd.addColumn("HV03-45", "ART Net Cohort at 12 months", ReportUtils.map(hivIndicators.art12MonthNetCohort(), indParams), "");
+        cohortDsd.addColumn("HV03-46", "On original 1st Line at 12 months", ReportUtils.map(hivIndicators.onOriginalFirstLineAt12Months(), indParams), "");
+        cohortDsd.addColumn("HV03-47", "On alternative 1st Line at 12 months", ReportUtils.map(hivIndicators.onAlternateFirstLineAt12Months(), indParams), "");
+        cohortDsd.addColumn("HV03-48", "On 2nd Line (or higher) at 12 months ", ReportUtils.map(hivIndicators.onSecondLineAt12Months(), indParams), "");
+        cohortDsd.addColumn("HV03-49", "On therapy at 12 months (Total) ", ReportUtils.map(hivIndicators.onTherapyAt12Months(), indParams), "");
+
+        // 3.9 (Screening)
+        EmrReportingUtils.addRow(cohortDsd, "HV03", "Screened for TB", ReportUtils.map(hivIndicators.screenedForTb(), indParams), nonInfantColumns, Arrays.asList("50", "51", "52", "53", "54"));
 
         return cohortDsd;
 
