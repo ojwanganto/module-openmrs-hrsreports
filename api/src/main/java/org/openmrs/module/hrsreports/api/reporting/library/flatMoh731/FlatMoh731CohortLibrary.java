@@ -5,9 +5,13 @@ import org.openmrs.module.reporting.cohort.definition.SqlCohortDefinition;
 import org.openmrs.module.reporting.dataset.definition.DataSetDefinition;
 import org.openmrs.module.reporting.dataset.definition.SqlDataSetDefinition;
 import org.openmrs.module.reporting.evaluation.parameter.Parameter;
+import org.openmrs.module.reporting.indicator.CohortIndicator;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+
+import static org.openmrs.module.kenyacore.report.ReportUtils.map;
+import static org.openmrs.module.kenyaemr.reporting.EmrReportingUtils.cohortIndicator;
 
 /**
  * Created by dev on 1/14/17.
@@ -199,6 +203,26 @@ public class FlatMoh731CohortLibrary {
 
     }
 
+    protected CohortDefinition startingARTWhileTbPatient() {
+
+        String sqlQuery = "select distinct fup.patient_id \n" +
+                "from kenyaemr_etl.etl_patient_hiv_followup fup \n" +
+                "join (select * from kenyaemr_etl.etl_drug_event e \n" +
+                "where date_started between :startDate and :endDate) started_art on  \n" +
+                "started_art.patient_id = fup.patient_id \n" +
+                "join kenyaemr_etl.etl_tb_enrollment tb on tb.patient_id=fup.patient_id\n" +
+                "where fup.visit_date between :startDate and :endDate;";
+
+        SqlCohortDefinition cd = new SqlCohortDefinition();
+        cd.setName("startingARTonTb");
+        cd.setQuery(sqlQuery);
+        cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        cd.addParameter(new Parameter("endDate", "End Date", Date.class));
+        cd.setDescription("Tb positive Started on ART");
+        return cd;
+
+    }
+
     protected CohortDefinition tbScreening() {
 
         String sqlQuery = " select tb.patient_id " +
@@ -215,22 +239,36 @@ public class FlatMoh731CohortLibrary {
 
     }
 
-    protected CohortDefinition pwp() {
+    protected CohortDefinition condomsProvided() {
 
-        String sqlQuery = " select count(distinct if(family_planning_method is not null  " +
-                "and family_planning_method<>190,e.patient_id,null)) as modern_contraceptives, " +
-                "count(distinct if(condom_provided=1065,e.patient_id,null)) as provided_with_condoms " +
+        String sqlQuery = " select distinct e.patient_id " +
                 "from kenyaemr_etl.etl_patient_hiv_followup e " +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
-                "where  date(e.visit_date) between :startDate and :endDate;";
+                "where  condom_provided=1065 and date(e.visit_date) between :startDate and :endDate;";
         SqlCohortDefinition cd = new SqlCohortDefinition();
-        cd.setName("pwp");
+        cd.setName("pwpCondom_provided");
         cd.setQuery(sqlQuery);
         cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
         cd.addParameter(new Parameter("endDate", "End Date", Date.class));
-        cd.setDescription("Prevention with Positives");
+        cd.setDescription("pwp - Condoms Provided");
         return cd;
     }
+
+    protected CohortDefinition modernContraceptivesProvided() {
+
+        String sqlQuery = " select distinct e.patient_id " +
+                "from kenyaemr_etl.etl_patient_hiv_followup e " +
+                "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "where  (family_planning_method is not null and family_planning_method<>190) and date(e.visit_date) between :startDate and :endDate;";
+        SqlCohortDefinition cd = new SqlCohortDefinition();
+        cd.setName("pwpModernContraceptivesProvided");
+        cd.setQuery(sqlQuery);
+        cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        cd.addParameter(new Parameter("endDate", "End Date", Date.class));
+        cd.setDescription("PWP - Modern Contraceptives Provided");
+        return cd;
+    }
+
 
 
     protected CohortDefinition art12MonthNetCohort() {
@@ -377,4 +415,133 @@ public class FlatMoh731CohortLibrary {
         return cd;
 
     }
+
+    protected CohortDefinition hivCareVisitsFemale18() {
+
+        String sqlQuery = "select distinct e.patient_id " +
+                "from kenyaemr_etl.etl_patient_hiv_followup e " +
+                "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=e.patient_id " +
+                "where timestampdiff(year,p.dob,:endDate)>=18 and p.gender='F' and date(e.visit_date) between :startDate and :endDate;";
+
+        SqlCohortDefinition cd = new SqlCohortDefinition();
+        cd.setName("hivCareVisitsFemales18");
+        cd.setQuery(sqlQuery);
+        cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        cd.addParameter(new Parameter("endDate", "End Date", Date.class));
+        cd.setDescription("Hiv Care Visits Female 18 and above");
+        return cd;
+
+    }
+
+    protected CohortDefinition hivCareVisitsScheduled() {
+
+        String sqlQuery = " select distinct patient_id \n" +
+                "from (\n" +
+                "select f1.patient_id,max(f1.visit_date) as visit_date, max(f2.next_appointment_date) as next_appointment_date \n" +
+                "from kenyaemr_etl.etl_patient_hiv_followup f1\n" +
+                "join kenyaemr_etl.etl_patient_hiv_followup f2 on f1.visit_date>f2.visit_date\n" +
+                "and f1.patient_id=f2.patient_id\n" +
+                "join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=f1.patient_id\n" +
+                "where date(f1.visit_date) between :startDate and :endDate\n" +
+                "group by f1.patient_id, f1.visit_date)vis where visit_date=next_appointment_date";
+        SqlCohortDefinition cd = new SqlCohortDefinition();
+        cd.setName("hivCareVisitsScheduled");
+        cd.setQuery(sqlQuery);
+        cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        cd.addParameter(new Parameter("endDate", "End Date", Date.class));
+        cd.setDescription("Hiv Care Visits Scheduled");
+        return cd;
+
+    }
+
+    protected CohortDefinition hivCareVisitsUnscheduled() {
+
+        String sqlQuery = " select distinct patient_id \n" +
+                "from (\n" +
+                "select f1.patient_id,max(f1.visit_date) as visit_date, max(f2.next_appointment_date) as next_appointment_date \n" +
+                "from kenyaemr_etl.etl_patient_hiv_followup f1\n" +
+                "join kenyaemr_etl.etl_patient_hiv_followup f2 on f1.visit_date>f2.visit_date\n" +
+                "and f1.patient_id=f2.patient_id\n" +
+                "join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=f1.patient_id\n" +
+                "where date(f1.visit_date) between :startDate and :endDate\n" +
+                "group by f1.patient_id, f1.visit_date)vis where visit_date<>next_appointment_date";
+
+        SqlCohortDefinition cd = new SqlCohortDefinition();
+        cd.setName("hivCareVisitsUnscheduled");
+        cd.setQuery(sqlQuery);
+        cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        cd.addParameter(new Parameter("endDate", "End Date", Date.class));
+        cd.setDescription("Hiv Care Visits Unscheduled");
+        return cd;
+
+    }
+
+    protected CohortDefinition hivCareVisitsTotal() {
+
+        String sqlQuery = " select distinct patient_id \n" +
+                "from (\n" +
+                "select f1.patient_id,max(f1.visit_date) as visit_date, max(f2.next_appointment_date) as next_appointment_date \n" +
+                "from kenyaemr_etl.etl_patient_hiv_followup f1\n" +
+                "join kenyaemr_etl.etl_patient_hiv_followup f2 on f1.visit_date>f2.visit_date\n" +
+                "and f1.patient_id=f2.patient_id\n" +
+                "join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=f1.patient_id\n" +
+                "where date(f1.visit_date) between :startDate and :endDate\n" +
+                "group by f1.patient_id, f1.visit_date)vis";
+        SqlCohortDefinition cd = new SqlCohortDefinition();
+        cd.setName("hivCareVisitsTotal");
+        cd.setQuery(sqlQuery);
+        cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        cd.addParameter(new Parameter("endDate", "End Date", Date.class));
+        cd.setDescription("Hiv Care Visits Total");
+        return cd;
+
+    }
+
+    protected CohortDefinition inHivProgramAndOnCtxProphylaxis() {
+        String sqlQuery = " select distinct e.patient_id " +
+                "from kenyaemr_etl.etl_patient_hiv_followup e " +
+                "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=e.patient_id " +
+                "where ctx_adherence is not null and date(e.visit_date) <= :endDate " +
+                " and e.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation " +
+                " where date(visit_date) < :endDate and program_name='HIV') " ;
+        SqlCohortDefinition cd = new SqlCohortDefinition();
+        cd.setName("inHivProgramAndOnCtxProphylaxis");
+        cd.setQuery(sqlQuery);
+        cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        cd.addParameter(new Parameter("endDate", "End Date", Date.class));
+        cd.setDescription("In Hiv Program And On Ctx Prophylaxis");
+        return cd;
+    }
+
+    protected CohortDefinition hivExposedInfantsWithin2Months() {
+        String sqlQuery = " select distinct e.patient_id " +
+                "    from kenyaemr_etl.etl_hei_enrollment e " +
+                "    join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "    where  child_exposed=822 and timestampdiff(month,p.dob,:endDate)<=2 and date(e.visit_date) between :startDate and :endDate";
+        SqlCohortDefinition cd = new SqlCohortDefinition();
+        cd.setName("hivExposedInfantsWithin2Months");
+        cd.setQuery(sqlQuery);
+        cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        cd.addParameter(new Parameter("endDate", "End Date", Date.class));
+        cd.setDescription("Hiv Exposed Infants Within 2 Months");
+        return cd;
+    }
+
+    protected CohortDefinition hivExposedInfantsWithin2MonthsAndEligibleForCTX() {
+        String sqlQuery = " select distinct e.patient_id " +
+                "    from kenyaemr_etl.etl_hei_enrollment e " +
+                "    join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "    where  child_exposed=822 and timestampdiff(month,p.dob,:endDate)<=2 and date(e.visit_date) between :startDate and :endDate";
+        SqlCohortDefinition cd = new SqlCohortDefinition();
+        cd.setName("hivExposedInfantsWithin2Months");
+        cd.setQuery(sqlQuery);
+        cd.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        cd.addParameter(new Parameter("endDate", "End Date", Date.class));
+        cd.setDescription("Hiv Exposed Infants Within 2 Months");
+        return cd;
+    }
+
+
 }

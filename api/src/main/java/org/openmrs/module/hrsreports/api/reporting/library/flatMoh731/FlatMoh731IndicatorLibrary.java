@@ -1,11 +1,17 @@
 package org.openmrs.module.hrsreports.api.reporting.library.flatMoh731;
 
 import org.openmrs.module.kenyacore.report.ReportUtils;
+import org.openmrs.module.kenyaemr.reporting.indicator.HivCareVisitsIndicator;
 import org.openmrs.module.kenyaemr.reporting.library.moh731.Moh731CohortLibrary;
+import org.openmrs.module.reporting.evaluation.parameter.Parameter;
 import org.openmrs.module.reporting.indicator.CohortIndicator;
+import org.openmrs.module.reporting.indicator.Indicator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
+
+import static org.openmrs.module.kenyacore.report.ReportUtils.map;
 import static org.openmrs.module.kenyaemr.reporting.EmrReportingUtils.cohortIndicator;
 
 /**
@@ -119,6 +125,87 @@ public class FlatMoh731IndicatorLibrary {
      */
     public CohortIndicator startedArtWhilePregnant() {
         return cohortIndicator("Started on ART Pregnant", ReportUtils.map(moh731Cohorts.startingARTPregnant(), "startDate=${startDate},endDate=${endDate}"));
+    }
+
+    /**
+     * Number of patients who were started on Art while pregnant
+     * @return the indicator
+     */
+    public CohortIndicator startedArtWhileTbPatient() {
+        return cohortIndicator("Started on ART - Tb Patient", ReportUtils.map(moh731Cohorts.startingARTWhileTbPatient(), "startDate=${startDate},endDate=${endDate}"));
+    }
+
+
+    /**
+     * Number of patients provided with condoms
+     * @return the indicator
+     */
+    public CohortIndicator condomsProvided() {
+        return cohortIndicator("patients provided with condoms", map(moh731Cohorts.condomsProvided(), "startDate=${startDate},endDate=${endDate}"));
+    }
+
+    /**
+     * Number of patients provided with modern contraceptives
+     * @return the indicator
+     */
+    public CohortIndicator modernContraceptivesProvided() {
+        return cohortIndicator("patients provided with modern contraceptives", map(moh731Cohorts.modernContraceptivesProvided(), "startDate=${startDate},endDate=${endDate}"));
+    }
+
+    /**
+     * Number of HIV care visits for females aged 18 and over
+     * @return the indicator
+     */
+    public CohortIndicator hivCareVisitsFemale18() {
+        return cohortIndicator("HIV care visits for females aged 18 and over", map(moh731Cohorts.hivCareVisitsFemale18(), "startDate=${startDate},endDate=${endDate}"));
+    }
+
+    /**
+     * Number of scheduled HIV care visits
+     * @return the indicator
+     */
+    public CohortIndicator hivCareVisitsScheduled() {
+        return cohortIndicator("Scheduled HIV care visits", map(moh731Cohorts.hivCareVisitsScheduled(), "startDate=${startDate},endDate=${endDate}"));
+    }
+
+    /**
+     * Number of unscheduled HIV care visits
+     * @return the indicator
+     */
+    public CohortIndicator hivCareVisitsUnscheduled() {
+        return cohortIndicator("Unscheduled HIV care visits", map(moh731Cohorts.hivCareVisitsUnscheduled(), "startDate=${startDate},endDate=${endDate}"));
+    }
+
+    /**
+     * Total number of HIV care visits
+     * @return the indicator
+     */
+    public CohortIndicator hivCareVisitsTotal() {
+        return cohortIndicator("HIV care visits", map(moh731Cohorts.hivCareVisitsTotal(), "startDate=${startDate},endDate=${endDate}"));
+    }
+
+    /**
+     * Number of patients who are on Cotrimoxazole prophylaxis
+     * @return the indicator
+     */
+    public CohortIndicator onCotrimoxazoleProphylaxis() {
+        return cohortIndicator("patients on CTX prophylaxis", map(moh731Cohorts.inHivProgramAndOnCtxProphylaxis(), "startDate=${startDate},endDate=${endDate}"));
+    }
+
+    /**
+     * HIV exposed infants within 2 months
+     * @return indicator
+     */
+    public CohortIndicator hivExposedInfantsWithin2Months() {
+        return cohortIndicator("Hiv Exposed Infants within 2 months", map(moh731Cohorts.hivExposedInfantsWithin2Months(), "startDate=${startDate},endDate=${endDate}"));
+    }
+
+    /**
+     * HIV exposed infants within 2 months and are eligible for ctx
+     * @return indicator
+     */
+    public  CohortIndicator hivExposedInfantsWithin2MonthsAndEligibleForCTX() {
+        return cohortIndicator("Hiv Exposed Infants within 2 months", map(moh731Cohorts.hivExposedInfantsWithin2MonthsAndEligibleForCTX(), "startDate=${startDate},endDate=${endDate}"));
     }
 
 }
