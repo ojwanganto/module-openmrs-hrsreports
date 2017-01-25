@@ -16,7 +16,7 @@
 	<!-- / Module Properties -->
 
     <require_modules>
-        <require_module version="15.1.8-RC2-SNAPSHOT">org.openmrs.module.kenyaemr</require_module>
+        <require_module version="15.1.4">org.openmrs.module.kenyaemr</require_module>
 		<require_module version="0.9.8.1">org.openmrs.module.reporting</require_module>
     </require_modules>
 	<!-- Module Activator -->
