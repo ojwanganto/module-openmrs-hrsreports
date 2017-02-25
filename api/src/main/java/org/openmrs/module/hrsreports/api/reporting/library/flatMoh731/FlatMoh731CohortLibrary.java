@@ -149,12 +149,13 @@ public class FlatMoh731CohortLibrary {
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=fup.patient_id " +
                 "join kenyaemr_etl.etl_hiv_enrollment e  on fup.patient_id=e.patient_id " +
                 "where (fup.visit_date between date_sub(:startDate, interval 3 month) and :endDate) " +
-                " and fup.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation " +
-                " where date(visit_date) <= :endDate and program_name='HIV') " +
                 "group by patient_id " +
-                "having (timestampdiff(day,latest_tca,:endDate)<=90) " +
+                "having (latest_tca>:endDate or \n" +
+                "(latest_tca between :startDate and :endDate and latest_vis_date between :startDate and :endDate) )\n" +
                 ") e " +
-                "where e.patient_id in (select patient_id\n" +
+                "where e.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation \n" +
+                "where date(visit_date) <= :endDate and program_name='HIV' and if(e.latest_tca>visit_date,1,0)=0) \n" +
+                "and e.patient_id in (select patient_id\n" +
                 "from (select e.patient_id,p.dob,p.Gender,min(e.date_started) as date_started,\n" +
                 "mid(min(concat(e.date_started,e.regimen_name)),11) as regimen,\n" +
                 "mid(min(concat(e.date_started,e.regimen_line)),11) as regimen_line,\n" +
@@ -162,7 +163,8 @@ public class FlatMoh731CohortLibrary {
                 "from kenyaemr_etl.etl_drug_event e\n" +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id\n" +
                 "group by e.patient_id) e\n" +
-                "where  date(e.date_started)<:startDate);";
+                "where  date(e.date_started)<:startDate) \n";
+
         SqlCohortDefinition cd = new SqlCohortDefinition();
         cd.setName("revisitsArt");
         cd.setQuery(sqlQuery);
