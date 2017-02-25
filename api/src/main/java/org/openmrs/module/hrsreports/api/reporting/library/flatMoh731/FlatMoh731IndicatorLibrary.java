@@ -30,7 +30,7 @@ public class FlatMoh731IndicatorLibrary {
      * @return the indicator
      */
     public CohortIndicator currentlyInCare() {
-        return cohortIndicator("Currently in care (includes transfers)", ReportUtils.map(moh731Cohorts.currentlyInCare(), "endDate=${endDate}"));
+        return cohortIndicator("Currently in care (includes transfers)", ReportUtils.map(moh731Cohorts.currentlyInCare(), "startDate=${startDate},endDate=${endDate}"));
     }
 
     public  CohortIndicator newHivEnrollment() {

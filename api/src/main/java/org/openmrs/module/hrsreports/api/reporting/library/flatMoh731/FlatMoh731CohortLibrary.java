@@ -26,7 +26,7 @@ public class FlatMoh731CohortLibrary {
         String sqlQuery = "select distinct e.patient_id " +
                 "from kenyaemr_etl.etl_hiv_enrollment e " +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
-                "where  e.entry_point <> 160563 " +
+                "where  e.entry_point <> 160563  and date_started_art_at_transferring_facility is null " +
                 "and date(e.visit_date) between :startDate and :endDate " +
                 ";";
         cd.setName("newHhivEnrollment");
@@ -40,20 +40,25 @@ public class FlatMoh731CohortLibrary {
 
     public  CohortDefinition currentlyInCare() {
         SqlCohortDefinition cd = new SqlCohortDefinition();
-        String sqlQuery=" select distinct e.patient_id " +
-                "from ( " +
-                "select fup.visit_date,fup.patient_id,p.dob,p.Gender, min(e.visit_date) as enroll_date,max(fup.visit_date) as latest_vis_date, " +
-                "max(fup.next_appointment_date) as latest_tca " +
-                "from kenyaemr_etl.etl_patient_hiv_followup fup " +
-                "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=fup.patient_id " +
-                "join kenyaemr_etl.etl_hiv_enrollment e  on fup.patient_id=e.patient_id " +
-                "where fup.visit_date <= :endDate " +
-                "and fup.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation " +
-                "where date(visit_date) <= :endDate and program_name='HIV') " +
-                "group by patient_id " +
-                // we may need to filter lost to follow-up using this
-                "having (timestampdiff(day,latest_tca,:endDate)<=90 or latest_tca>=:endDate)\n" +
-                ") e;";
+        String sqlQuery=" select distinct e.patient_id\n" +
+                "from ( \n" +
+                "select fup.visit_date,fup.patient_id,p.dob,p.Gender, min(e.visit_date) as enroll_date,\n" +
+                "max(fup.visit_date) as latest_vis_date,\n" +
+                "max(fup.next_appointment_date) as latest_tca,\n" +
+                "p.unique_patient_no\n" +
+                "from kenyaemr_etl.etl_patient_hiv_followup fup \n" +
+                "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=fup.patient_id \n" +
+                "join kenyaemr_etl.etl_hiv_enrollment e on fup.patient_id=e.patient_id \n" +
+                "where fup.visit_date <= :endDate \n" +
+                "group by patient_id \n" +
+//                "--  we may need to filter lost to follow-up using this\n" +
+                "having (latest_tca>:endDate or \n" +
+                "(latest_tca between :startDate and :endDate and latest_vis_date between :startDate and :endDate) )\n" +
+//                "-- drop missd completely\n" +
+                ") e\n" +
+//                "-- drop discountinued\n" +
+                "where e.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation \n" +
+                "where date(visit_date) <= :endDate and program_name='HIV' and if(e.latest_tca>visit_date,1,0)=0)  ";
 
         cd.setName("currentlyInCare");
         cd.setQuery(sqlQuery);
@@ -102,22 +107,26 @@ public class FlatMoh731CohortLibrary {
 
     public CohortDefinition currentlyOnArt() {
         SqlCohortDefinition cd = new SqlCohortDefinition();
-        String sqlQuery=" select distinct e.patient_id " +
-                "from ( " +
-                "select fup.visit_date,fup.patient_id,p.dob,p.Gender, " +
-                "min(e.visit_date) as enroll_date, " +
-                "max(fup.visit_date) as latest_vis_date, " +
-                "max(fup.next_appointment_date) as latest_tca " +
-                "from kenyaemr_etl.etl_patient_hiv_followup fup " +
-                "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=fup.patient_id " +
-                "join kenyaemr_etl.etl_hiv_enrollment e  on fup.patient_id=e.patient_id " +
-                "where (fup.visit_date <= :endDate) " +
-                " and fup.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation " +
-                " where date(visit_date) <= :endDate and program_name='HIV') " +
-                "group by patient_id " +
-                "having (timestampdiff(day,latest_tca,:endDate)<=90 or latest_tca>=:endDate)\n" +
-                ") e " +
-                "where e.patient_id in (select distinct patient_id  " +
+        String sqlQuery=" select distinct e.patient_id\n" +
+                "from ( \n" +
+                "select fup.visit_date,fup.patient_id,p.dob,p.Gender, min(e.visit_date) as enroll_date,\n" +
+                "max(fup.visit_date) as latest_vis_date,\n" +
+                "max(fup.next_appointment_date) as latest_tca,\n" +
+                "p.unique_patient_no\n" +
+                "from kenyaemr_etl.etl_patient_hiv_followup fup \n" +
+                "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=fup.patient_id \n" +
+                "join kenyaemr_etl.etl_hiv_enrollment e on fup.patient_id=e.patient_id \n" +
+                "where fup.visit_date <= :endDate \n" +
+                "group by patient_id \n" +
+//                "--  we may need to filter lost to follow-up using this\n" +
+                "having (latest_tca>:endDate or \n" +
+                "(latest_tca between :startDate and :endDate and latest_vis_date between :startDate and :endDate) )\n" +
+//                "-- drop missd completely\n" +
+                ") e\n" +
+//                "-- drop discountinued\n" +
+                "where e.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation \n" +
+                "where date(visit_date) <= :endDate and program_name='HIV' and if(e.latest_tca>visit_date,1,0)=0) \n" +
+                "and e.patient_id in (select distinct patient_id  " +
                 "from kenyaemr_etl.etl_drug_event  " +
                 "where date(date_started) <= :endDate);";
 
@@ -240,11 +249,31 @@ public class FlatMoh731CohortLibrary {
     }
 
     protected CohortDefinition tbScreening() {
-
-        String sqlQuery = " select tb.patient_id " +
-                "from kenyaemr_etl.etl_tb_screening tb " +
+// look all active in care who were screened for tb
+        String sqlQuery = " select distinct e.patient_id\n" +
+                "from ( \n" +
+                "select fup.visit_date,fup.patient_id,p.dob,p.Gender, min(e.visit_date) as enroll_date,\n" +
+                "max(fup.visit_date) as latest_vis_date,\n" +
+                "max(fup.next_appointment_date) as latest_tca,\n" +
+                "p.unique_patient_no\n" +
+                "from kenyaemr_etl.etl_patient_hiv_followup fup \n" +
+                "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=fup.patient_id \n" +
+                "join kenyaemr_etl.etl_hiv_enrollment e on fup.patient_id=e.patient_id \n" +
+                "where fup.visit_date <= :endDate \n" +
+                "group by patient_id \n" +
+//                "--  we may need to filter lost to follow-up using this\n" +
+                "having (latest_tca>:endDate or \n" +
+                "(latest_tca between :startDate and :endDate and latest_vis_date between :startDate and :endDate) )\n" +
+//                "-- drop missd completely\n" +
+                ") e\n" +
+//                "-- drop discountinued\n" +
+                "where e.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation \n" +
+                "where date(visit_date) <= :endDate and program_name='HIV' and if(e.latest_tca>visit_date,1,0)=0) \n" +
+                "and e.patient_id in (select distinct tb.patient_id  " +
+                "from kenyaemr_etl.etl_tb_screening tb  " +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=tb.patient_id " +
-                "where  date(tb.visit_date) between :startDate and :endDate;";
+                "where  date(tb.visit_date) between date_sub(:startDate, interval 3 month) and :endDate);";
+
         SqlCohortDefinition cd = new SqlCohortDefinition();
         cd.setName("tbScreening");
         cd.setQuery(sqlQuery);
@@ -515,21 +544,27 @@ public class FlatMoh731CohortLibrary {
     }
 
     protected CohortDefinition inHivProgramAndOnCtxProphylaxis() {
-        String sqlQuery = "select distinct e.patient_id \n" +
+        String sqlQuery=" select distinct e.patient_id\n" +
                 "from ( \n" +
-                "select fup.visit_date,fup.patient_id,p.dob,p.Gender, \n" +
-                "min(e.visit_date) as enroll_date, \n" +
-                "max(fup.visit_date) as latest_vis_date, \n" +
-                "max(fup.next_appointment_date) as latest_tca \n" +
+                "select fup.visit_date,fup.patient_id,p.dob,p.Gender, min(e.visit_date) as enroll_date,\n" +
+                "max(fup.visit_date) as latest_vis_date,\n" +
+                "max(fup.next_appointment_date) as latest_tca,\n" +
+                "p.unique_patient_no\n" +
                 "from kenyaemr_etl.etl_patient_hiv_followup fup \n" +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=fup.patient_id \n" +
-                "join kenyaemr_etl.etl_hiv_enrollment e  on fup.patient_id=e.patient_id \n" +
-                "where fup.ctx_dispensed in (105281,74250,1065) and (fup.visit_date <= :endDate) \n" +
-                "and fup.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation \n" +
-                "where date(visit_date) <= :endDate and program_name='HIV') \n" +
+                "join kenyaemr_etl.etl_hiv_enrollment e on fup.patient_id=e.patient_id \n" +
+                "where fup.ctx_dispensed in (105281,74250,1065) and\n" +
+                "fup.visit_date <= :endDate \n" +
                 "group by patient_id \n" +
-                "having (timestampdiff(day,latest_tca,:endDate)<=90 or latest_tca>=:endDate)\n" +
-                ") e ; " ;
+//                "--  we may need to filter lost to follow-up using this\n" +
+                "having (latest_tca>:endDate or \n" +
+                "(latest_tca between :startDate and :endDate and latest_vis_date between :startDate and :endDate) )\n" +
+//                "-- drop missd completely\n" +
+                ") e\n" +
+//                "-- drop discountinued\n" +
+                "where e.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation \n" +
+                "where date(visit_date) <= :endDate and program_name='HIV' and if(e.latest_tca>visit_date,1,0)=0)  ";
+
         SqlCohortDefinition cd = new SqlCohortDefinition();
         cd.setName("inHivProgramAndOnCtxProphylaxis");
         cd.setQuery(sqlQuery);
