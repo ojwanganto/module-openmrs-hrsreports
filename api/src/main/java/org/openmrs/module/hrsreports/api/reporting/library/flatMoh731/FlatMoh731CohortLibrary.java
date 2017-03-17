@@ -44,7 +44,7 @@ public class FlatMoh731CohortLibrary {
                 "from ( \n" +
                 "select fup.visit_date,fup.patient_id,p.dob,p.Gender, min(e.visit_date) as enroll_date,\n" +
                 "max(fup.visit_date) as latest_vis_date,\n" +
-                "max(fup.next_appointment_date) as latest_tca,\n" +
+                "mid(max(concat(fup.visit_date,fup.next_appointment_date)),11) as latest_tca,\n" +
                 "p.unique_patient_no\n" +
                 "from kenyaemr_etl.etl_patient_hiv_followup fup \n" +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=fup.patient_id \n" +
@@ -58,7 +58,10 @@ public class FlatMoh731CohortLibrary {
                 ") e\n" +
 //                "-- drop discountinued\n" +
                 "where e.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation \n" +
-                "where date(visit_date) <= :endDate and program_name='HIV' and if(e.latest_tca>visit_date,1,0)=0)  ";
+                "where date(visit_date) <= :endDate and program_name='HIV' \n" +
+                "group by patient_id \n" +
+                "having if(e.latest_tca>max(visit_date),1,0)=0) ";
+
 
         cd.setName("currentlyInCare");
         cd.setQuery(sqlQuery);
@@ -78,7 +81,7 @@ public class FlatMoh731CohortLibrary {
                 "d.visit_date as dis_date, \n" +
                 "if(d.visit_date is not null, 1, 0) as TOut,\n" +
                 "e.regimen, e.regimen_line, e.alternative_regimen, \n" +
-                "max(fup.next_appointment_date) as latest_tca, \n" +
+                "mid(max(concat(fup.visit_date,fup.next_appointment_date)),11) as latest_tca, \n" +
                 "max(if(enr.date_started_art_at_transferring_facility is not null and enr.facility_transferred_from is not null, 1, 0)) as TI_on_art,\n" +
                 "max(if(enr.transfer_in_date is not null, 1, 0)) as TIn, \n" +
                 "max(fup.visit_date) as latest_vis_date\n" +
@@ -111,7 +114,7 @@ public class FlatMoh731CohortLibrary {
                 "from ( \n" +
                 "select fup.visit_date,fup.patient_id,p.dob,p.Gender, min(e.visit_date) as enroll_date,\n" +
                 "max(fup.visit_date) as latest_vis_date,\n" +
-                "max(fup.next_appointment_date) as latest_tca,\n" +
+                "mid(max(concat(fup.visit_date,fup.next_appointment_date)),11) as latest_tca,\n" +
                 "p.unique_patient_no\n" +
                 "from kenyaemr_etl.etl_patient_hiv_followup fup \n" +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=fup.patient_id \n" +
@@ -125,7 +128,9 @@ public class FlatMoh731CohortLibrary {
                 ") e\n" +
 //                "-- drop discountinued\n" +
                 "where e.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation \n" +
-                "where date(visit_date) <= :endDate and program_name='HIV' and if(e.latest_tca>visit_date,1,0)=0) \n" +
+                "where date(visit_date) <= :endDate and program_name='HIV' \n" +
+                "group by patient_id \n" +
+                "having if(e.latest_tca>max(visit_date),1,0)=0) \n" +
                 "and e.patient_id in (select distinct patient_id  " +
                 "from kenyaemr_etl.etl_drug_event  " +
                 "where date(date_started) <= :endDate);";
@@ -144,7 +149,7 @@ public class FlatMoh731CohortLibrary {
                 "select fup.visit_date,fup.patient_id,p.dob,p.Gender, " +
                 "min(e.visit_date) as enroll_date, " +
                 "max(fup.visit_date) as latest_vis_date, " +
-                "max(fup.next_appointment_date) as latest_tca " +
+                "mid(max(concat(fup.visit_date,fup.next_appointment_date)),11) as latest_tca " +
                 "from kenyaemr_etl.etl_patient_hiv_followup fup " +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=fup.patient_id " +
                 "join kenyaemr_etl.etl_hiv_enrollment e  on fup.patient_id=e.patient_id " +
@@ -154,7 +159,9 @@ public class FlatMoh731CohortLibrary {
                 "(latest_tca between :startDate and :endDate and latest_vis_date between :startDate and :endDate) )\n" +
                 ") e " +
                 "where e.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation \n" +
-                "where date(visit_date) <= :endDate and program_name='HIV' and if(e.latest_tca>visit_date,1,0)=0) \n" +
+                "where date(visit_date) <= :endDate and program_name='HIV' \n" +
+                "group by patient_id \n" +
+                "having if(e.latest_tca>max(visit_date),1,0)=0) \n" +
                 "and e.patient_id in (select patient_id\n" +
                 "from (select e.patient_id,p.dob,p.Gender,min(e.date_started) as date_started,\n" +
                 "mid(min(concat(e.date_started,e.regimen_name)),11) as regimen,\n" +
@@ -187,7 +194,7 @@ public class FlatMoh731CohortLibrary {
                 "max(if(enr.transfer_in_date is not null, 1, 0)) as TIn,\n" +
                 "max(if(enr.date_started_art_at_transferring_facility is not null and enr.facility_transferred_from is not null, 1, 0)) as TI_on_art,\n" +
                 "enr.transfer_in_date,max(fup.visit_date) as latest_vis_date, \n" +
-                "max(fup.next_appointment_date) as latest_tca \n" +
+                "mid(max(concat(fup.visit_date,fup.next_appointment_date)),11) as latest_tca \n" +
                 "from (select e.patient_id,p.dob,p.Gender,min(e.date_started) as date_started, \n" +
                 "mid(min(concat(e.date_started,e.regimen_name)),11) as regimen, \n" +
                 "mid(min(concat(e.date_started,e.regimen_line)),11) as regimen_line, \n" +
@@ -256,7 +263,7 @@ public class FlatMoh731CohortLibrary {
                 "from ( \n" +
                 "select fup.visit_date,fup.patient_id,p.dob,p.Gender, min(e.visit_date) as enroll_date,\n" +
                 "max(fup.visit_date) as latest_vis_date,\n" +
-                "max(fup.next_appointment_date) as latest_tca,\n" +
+                "mid(max(concat(fup.visit_date,fup.next_appointment_date)),11) as latest_tca,\n" +
                 "p.unique_patient_no\n" +
                 "from kenyaemr_etl.etl_patient_hiv_followup fup \n" +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=fup.patient_id \n" +
@@ -270,7 +277,9 @@ public class FlatMoh731CohortLibrary {
                 ") e\n" +
 //                "-- drop discountinued\n" +
                 "where e.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation \n" +
-                "where date(visit_date) <= :endDate and program_name='HIV' and if(e.latest_tca>visit_date,1,0)=0) \n" +
+                "where date(visit_date) <= :endDate and program_name='HIV' \n" +
+                "group by patient_id \n" +
+                "having if(e.latest_tca>max(visit_date),1,0)=0) \n" +
                 "and e.patient_id in (select distinct tb.patient_id  " +
                 "from kenyaemr_etl.etl_tb_screening tb  " +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=tb.patient_id " +
@@ -323,7 +332,7 @@ public class FlatMoh731CohortLibrary {
         String sqlQuery = "  select distinct net.patient_id " +
                 "  from ( " +
                 "  select e.patient_id,e.date_started, e.gender,e.dob,d.visit_date as dis_date, if(d.visit_date is not null, 1, 0) as TOut," +
-                "   e.regimen, e.regimen_line, e.alternative_regimen, max(fup.next_appointment_date) as latest_tca, "+
+                "   e.regimen, e.regimen_line, e.alternative_regimen, mid(max(concat(fup.visit_date,fup.next_appointment_date)),11) as latest_tca, "+
                 "  if(enr.transfer_in_date is not null, 1, 0) as TIn, max(fup.visit_date) as latest_vis_date" +
                 "    from (select e.patient_id,p.dob,p.Gender,min(e.date_started) as date_started, " +
                 "    mid(min(concat(e.date_started,e.regimen_name)),11) as regimen, " +
@@ -353,7 +362,7 @@ public class FlatMoh731CohortLibrary {
         String sqlQuery = "  select distinct net.patient_id " +
                 "  from ( " +
                 "  select e.patient_id,e.date_started, e.gender,e.dob,d.visit_date as dis_date, if(d.visit_date is not null, 1, 0) as TOut," +
-                "   e.regimen, e.regimen_line, e.alternative_regimen, max(fup.next_appointment_date) as latest_tca, "+
+                "   e.regimen, e.regimen_line, e.alternative_regimen, mid(max(concat(fup.visit_date,fup.next_appointment_date)),11) as latest_tca, "+
                 "  if(enr.transfer_in_date is not null, 1, 0) as TIn, max(fup.visit_date) as latest_vis_date" +
                 "    from (select e.patient_id,p.dob,p.Gender,min(e.date_started) as date_started, " +
                 "    mid(min(concat(e.date_started,e.regimen_name)),11) as regimen, " +
@@ -383,7 +392,7 @@ public class FlatMoh731CohortLibrary {
         String sqlQuery = "  select distinct net.patient_id " +
               "  from ( " +
                 "  select e.patient_id,e.date_started, e.gender,e.dob,d.visit_date as dis_date, if(d.visit_date is not null, 1, 0) as TOut," +
-                "   e.regimen, e.regimen_line, e.alternative_regimen, max(fup.next_appointment_date) as latest_tca, "+
+                "   e.regimen, e.regimen_line, e.alternative_regimen, mid(max(concat(fup.visit_date,fup.next_appointment_date)),11) as latest_tca, "+
                 "  if(enr.transfer_in_date is not null, 1, 0) as TIn, max(fup.visit_date) as latest_vis_date" +
                 "    from (select e.patient_id,p.dob,p.Gender,min(e.date_started) as date_started, " +
                 "    mid(min(concat(e.date_started,e.regimen_name)),11) as regimen, " +
@@ -413,7 +422,7 @@ public class FlatMoh731CohortLibrary {
         String sqlQuery = "  select distinct net.patient_id " +
                "  from ( " +
                 "  select e.patient_id,e.date_started, e.gender,e.dob,d.visit_date as dis_date, if(d.visit_date is not null, 1, 0) as TOut," +
-                "   e.regimen, e.regimen_line, e.alternative_regimen, max(fup.next_appointment_date) as latest_tca, "+
+                "   e.regimen, e.regimen_line, e.alternative_regimen, mid(max(concat(fup.visit_date,fup.next_appointment_date)),11) as latest_tca, "+
                 "  if(enr.transfer_in_date is not null, 1, 0) as TIn, max(fup.visit_date) as latest_vis_date" +
                 "    from (select e.patient_id,p.dob,p.Gender,min(e.date_started) as date_started, " +
                 "    mid(min(concat(e.date_started,e.regimen_name)),11) as regimen, " +
@@ -550,7 +559,7 @@ public class FlatMoh731CohortLibrary {
                 "from ( \n" +
                 "select fup.visit_date,fup.patient_id,p.dob,p.Gender, min(e.visit_date) as enroll_date,\n" +
                 "max(fup.visit_date) as latest_vis_date,\n" +
-                "max(fup.next_appointment_date) as latest_tca,\n" +
+                "mid(max(concat(fup.visit_date,fup.next_appointment_date)),11) as latest_tca,\n" +
                 "p.unique_patient_no\n" +
                 "from kenyaemr_etl.etl_patient_hiv_followup fup \n" +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=fup.patient_id \n" +
@@ -565,7 +574,9 @@ public class FlatMoh731CohortLibrary {
                 ") e\n" +
 //                "-- drop discountinued\n" +
                 "where e.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation \n" +
-                "where date(visit_date) <= :endDate and program_name='HIV' and if(e.latest_tca>visit_date,1,0)=0)  ";
+                "where date(visit_date) <= :endDate and program_name='HIV' \n" +
+                "group by patient_id \n" +
+                "having if(e.latest_tca>max(visit_date),1,0)=0) ";
 
         SqlCohortDefinition cd = new SqlCohortDefinition();
         cd.setName("inHivProgramAndOnCtxProphylaxis");
