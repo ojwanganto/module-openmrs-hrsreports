@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+  		    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+  		    http://www.springframework.org/schema/context
+  		    http://www.springframework.org/schema/context/spring-context-3.0.xsd
+  		    http://www.springframework.org/schema/jee
+  		    http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+  		    http://www.springframework.org/schema/tx
+  		    http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+  		    http://www.springframework.org/schema/aop
+  		    http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+  		    http://www.springframework.org/schema/util
+  		    http://www.springframework.org/schema/util/spring-util-3.0.xsd">
+
+	<!-- Add here beans related to the API context -->
+
+	
+	<!-- Services accessible via Context.getService() -->
+	<bean parent="serviceContext">
+		<property name="moduleService">
+			<list>
+				<value>org.openmrs.module.hrsreports.api.HRSReportsService</value>
+				<bean
+					class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+					<property name="transactionManager">
+						<ref bean="transactionManager" />
+					</property>
+					<property name="target">
+						<bean class="org.openmrs.module.hrsreports.api.impl.HRSReportsServiceImpl">
+							<property name="dao">
+								<bean class="org.openmrs.module.hrsreports.api.db.hibernate.HibernateHRSReportsDAO">
+									<property name="sessionFactory">
+										<ref bean="sessionFactory" />
+									</property>
+								</bean>
+							</property>
+						</bean>
+					</property>
+					<property name="preInterceptors">
+						<ref bean="serviceInterceptors" />
+					</property>
+					<property name="transactionAttributeSource">
+						<ref bean="transactionAttributeSource" />
+					</property>
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+    <bean id="hrsreports.config.report" class="org.openmrs.module.kenyacore.report.ReportConfiguration">
+        <property name="commonReports">
+            <set>
+                <!--<ref bean="hrsreports.common.report.hrsstudyvariablereport" />-->
+				<ref bean="hrsreports.common.report.flatMOH731Report" />
+				<ref bean="hrsreports.common.report.flatMOH731ReportRevised" />
+            </set>
+        </property>
+    </bean>
+
+
+    <!--<bean id="hrsreports.app.reports" factory-bean="kenyacore.appFactoryBean" factory-method="createInstance">
+        <constructor-arg value="hrsreports.reports" />
+        <constructor-arg value="HRS Report Configuration" />
+        <constructor-arg value="hrsreports/cohortImport.page" />
+        <constructor-arg value="hrsreports:apps/hrs_report-icon.gif" />
+        <constructor-arg value="1100000" />
+    </bean>-->
+
+    <!--Add reports here -->
+    <!--<bean id="hrsreports.common.report.hrsstudyvariablereport" class="org.openmrs.module.kenyacore.report.HybridReportDescriptor">
+        <property name="targetUuid" value="e2cac59f-2d83-11e5-942f-000c29853f9c" />
+        <property name="name" value="HRS Study Report" />
+        <property name="description" value="Report for HRS Study" />
+        <property name="apps">
+            <set>
+                <ref bean="kenyaemr.app.reports" />
+            </set></property>
+        <property name="template" value="hrsreports:hrsreport.xls" />
+        <property name="repeatingSection" value="sheet:1,row:6,dataset:VisitInformation" />
+    </bean>-->
+
+	<bean id="hrsreports.common.report.flatMOH731Report" class="org.openmrs.module.kenyacore.report.IndicatorReportDescriptor">
+		<property name="targetUuid" value="6f857996-a96d-42c5-8863-b66c215d8f6d" />
+		<property name="name" value="Flat MOH 731 Report" />
+		<property name="description" value="Optimized MOH 731 Report" />
+		<property name="apps">
+			<set>
+				<ref bean="kenyaemr.app.reports" />
+			</set></property>
+		<property name="template" value="hrsreports:moh_731_2.xls" />
+	</bean>
+	<bean id="hrsreports.common.report.flatMOH731ReportRevised" class="org.openmrs.module.kenyacore.report.IndicatorReportDescriptor">
+		<property name="targetUuid" value="b90e5c71-4e7b-4996-b8b8-b2278d5929af" />
+		<property name="name" value="Flat MOH 731 Report Revised" />
+		<property name="description" value="Optimized MOH 731 Report Revised" />
+		<property name="apps">
+			<set>
+				<ref bean="kenyaemr.app.reports" />
+			</set></property>
+		<property name="template" value="kenyaemr:moh731.xls" />
+	</bean>
+
+	
+</beans>

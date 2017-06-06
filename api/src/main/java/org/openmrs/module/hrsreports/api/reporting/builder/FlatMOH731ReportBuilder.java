@@ -14,36 +14,12 @@
 
 package org.openmrs.module.hrsreports.api.reporting.builder;
 
-import org.openmrs.PatientIdentifierType;
-import org.openmrs.module.hrsreports.api.reporting.converter.GenericDateConverter;
-import org.openmrs.module.hrsreports.api.reporting.definition.data.DateCreatedDataDefinition;
-import org.openmrs.module.hrsreports.api.reporting.definition.data.EnrollmentDateCalculation;
-import org.openmrs.module.hrsreports.api.reporting.definition.data.NextVisitDateDataDefinition;
-import org.openmrs.module.hrsreports.api.reporting.definition.data.QueryDateCalculation;
-import org.openmrs.module.hrsreports.api.reporting.definition.data.ViralLoadDataDefinition;
-import org.openmrs.module.hrsreports.api.reporting.definition.data.VisitCD4DataDefinition;
-import org.openmrs.module.hrsreports.api.reporting.definition.data.VisitTestRequestDateDataDefinition;
-import org.openmrs.module.hrsreports.api.reporting.query.definition.StudyVisitQuery;
 import org.openmrs.module.kenyacore.report.ReportDescriptor;
 import org.openmrs.module.kenyacore.report.ReportUtils;
 import org.openmrs.module.kenyacore.report.builder.AbstractReportBuilder;
 import org.openmrs.module.kenyacore.report.builder.Builds;
-import org.openmrs.module.kenyacore.report.data.patient.definition.CalculationDataDefinition;
-import org.openmrs.module.kenyaemr.calculation.library.hiv.art.InitialArtStartDateCalculation;
-import org.openmrs.module.kenyaemr.metadata.HivMetadata;
-import org.openmrs.module.metadatadeploy.MetadataUtils;
-import org.openmrs.module.reporting.data.DataDefinition;
-import org.openmrs.module.reporting.data.converter.DataConverter;
-import org.openmrs.module.reporting.data.converter.DateConverter;
-import org.openmrs.module.reporting.data.converter.ObjectFormatter;
-import org.openmrs.module.reporting.data.patient.definition.ConvertedPatientDataDefinition;
-import org.openmrs.module.reporting.data.patient.definition.PatientIdDataDefinition;
-import org.openmrs.module.reporting.data.patient.definition.PatientIdentifierDataDefinition;
-import org.openmrs.module.reporting.data.person.definition.GenderDataDefinition;
-import org.openmrs.module.reporting.data.visit.definition.VisitIdDataDefinition;
 import org.openmrs.module.reporting.dataset.definition.DataSetDefinition;
 import org.openmrs.module.reporting.dataset.definition.SqlDataSetDefinition;
-import org.openmrs.module.reporting.dataset.definition.VisitDataSetDefinition;
 import org.openmrs.module.reporting.evaluation.parameter.Mapped;
 import org.openmrs.module.reporting.evaluation.parameter.Parameter;
 import org.openmrs.module.reporting.report.definition.ReportDefinition;
@@ -93,17 +69,16 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
                 ReportUtils.map(netCohort(), "startDate=${startDate},endDate=${endDate}"),
                 ReportUtils.map(infantTestingInitial(), "startDate=${startDate},endDate=${endDate}"),
                 ReportUtils.map(infantFeeding(), "startDate=${startDate},endDate=${endDate}")
-
         );
     }
 
     protected DataSetDefinition enrollments() {
 
-        String testQuery = "select count(distinct if(timestampdiff(year,p.dob,now())<1,e.patient_id,null)) as enrolled_below_1_yr, " +
-                "count(distinct if(timestampdiff(year,p.dob,now())<15 and p.gender='M',e.patient_id,null)) as enrolled_below_15yrs_M, " +
-                "count(distinct if(timestampdiff(year,p.dob,now())<15 and p.gender='F',e.patient_id,null)) as enrolled_below_15yrs_F, " +
-                "count(distinct if(timestampdiff(year,p.dob,now())>=15 and p.gender='M',e.patient_id,null)) as enrolled_15yrs_and_above_M, " +
-                "count(distinct if(timestampdiff(year,p.dob,now())>=15 and p.gender='F',e.patient_id,null)) as enrolled_15yrs_and_above_F, " +
+        String testQuery = "select count(distinct if(timestampdiff(year,p.dob,:endDate)<1,e.patient_id,null)) as enrolled_below_1_yr, " +
+                "count(distinct if(timestampdiff(year,p.dob,:endDate)<15 and p.gender='M',e.patient_id,null)) as enrolled_below_15yrs_M, " +
+                "count(distinct if(timestampdiff(year,p.dob,:endDate)<15 and p.gender='F',e.patient_id,null)) as enrolled_below_15yrs_F, " +
+                "count(distinct if(timestampdiff(year,p.dob,:endDate)>=15 and p.gender='M',e.patient_id,null)) as enrolled_15yrs_and_above_M, " +
+                "count(distinct if(timestampdiff(year,p.dob,:endDate)>=15 and p.gender='F',e.patient_id,null)) as enrolled_15yrs_and_above_F, " +
                 "count(distinct e.patient_id) as enrolled_Total " +
                 "from kenyaemr_etl.etl_hiv_enrollment e " +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
@@ -124,25 +99,24 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
     protected DataSetDefinition currentInCare() {
 
-        String testQuery = " select count(distinct if(timestampdiff(year,e.dob,now())<1,e.patient_id,null)) as current_in_care_below_1_yr, " +
-                "count(distinct if(timestampdiff(year,e.dob,now())<15 and e.gender='M',e.patient_id,null)) as current_in_care_below_15yrs_M, " +
-                "count(distinct if(timestampdiff(year,e.dob,now())<15 and e.gender='F',e.patient_id,null)) as current_in_care_below_15yrs_F, " +
-                "count(distinct if(timestampdiff(year,e.dob,now())>=15 and e.gender='M',e.patient_id,null)) as current_in_care_15yrs_and_above_M, " +
-                "count(distinct if(timestampdiff(year,e.dob,now())>=15 and e.gender='F',e.patient_id,null)) as current_in_care_15yrs_and_above_F, " +
+        String testQuery = " select count(distinct if(timestampdiff(year,e.dob,:endDate)<1,e.patient_id,null)) as current_in_care_below_1_yr, " +
+                "count(distinct if(timestampdiff(year,e.dob,:endDate)<15 and e.gender='M',e.patient_id,null)) as current_in_care_below_15yrs_M, " +
+                "count(distinct if(timestampdiff(year,e.dob,:endDate)<15 and e.gender='F',e.patient_id,null)) as current_in_care_below_15yrs_F, " +
+                "count(distinct if(timestampdiff(year,e.dob,:endDate)>=15 and e.gender='M',e.patient_id,null)) as current_in_care_15yrs_and_above_M, " +
+                "count(distinct if(timestampdiff(year,e.dob,:endDate)>=15 and e.gender='F',e.patient_id,null)) as current_in_care_15yrs_and_above_F, " +
                 "count(distinct e.patient_id) as current_in_care_Total " +
                 "from ( " +
-                "select fup.visit_date,fup.patient_id,p.dob,p.Gender " +
+                "select fup.visit_date,fup.patient_id,p.dob,p.Gender, min(e.visit_date) as enroll_date,max(fup.visit_date) as latest_vis_date, " +
+                "max(fup.next_appointment_date) as latest_tca " +
                 "from kenyaemr_etl.etl_patient_hiv_followup fup " +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=fup.patient_id " +
-                "where date(fup.visit_date) between DATE_SUB(:endDate, INTERVAL 2 MONTH) and :endDate " +
-                //"-- filter discontinuations " +
+                "join kenyaemr_etl.etl_hiv_enrollment e  on fup.patient_id=e.patient_id " +
+                "where (date(fup.visit_date) <= :endDate) " +
                 "and fup.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation " +
-                "where date(visit_date) between :startDate and :endDate) " +
-                "union " +
-                "select e.visit_date,e.patient_id,p.dob,p.Gender " +
-                "from kenyaemr_etl.etl_hiv_enrollment e " +
-                "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
-                "where  date(e.visit_date) between :startDate and :endDate " +
+                "where date(visit_date) < :endDate and program_name='HIV') " +
+                "group by patient_id " +
+                // we may need to filter lost to follow-up using this
+                //having (timestampdiff(day,latest_tca,'2015-01-31')<=90)
                 ") e;";
         SqlDataSetDefinition ds = new SqlDataSetDefinition();
         ds.setName("currentInCare");
@@ -158,15 +132,32 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
     protected DataSetDefinition startedOnART() {
 
-        String testQuery = " select count(distinct if(timestampdiff(year,p.dob,now())<1,e.patient_id,null)) as Starting_Art_below_1_yr, " +
-                "count(distinct if(timestampdiff(year,p.dob,now())<15 and p.gender='M',e.patient_id,null)) as Starting_Art_below_15yrs_M, " +
-                "count(distinct if(timestampdiff(year,p.dob,now())<15 and p.gender='F',e.patient_id,null)) as Starting_Art_below_15yrs_F, " +
-                "count(distinct if(timestampdiff(year,p.dob,now())>=15 and p.gender='M',e.patient_id,null)) as Starting_Art_15yrs_and_above_M, " +
-                "count(distinct if(timestampdiff(year,p.dob,now())>=15 and p.gender='F',e.patient_id,null)) as Starting_Art_15yrs_and_above_F, " +
-                "count(distinct e.patient_id) as Starting_Art_Total " +
-                "from kenyaemr_etl.etl_drug_event e " +
-                "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
-                "where  date(e.date_started) between :startDate and :endDate;";
+        String testQuery = " select count(distinct if(timestampdiff(year,net.dob,:endDate)<1,net.patient_id,null)) as Starting_Art_below_1_yr, " +
+                "count(distinct if(timestampdiff(year,net.dob,:endDate)<15 and net.gender='M',net.patient_id,null)) as Starting_Art_below_15yrs_M, " +
+                "count(distinct if(timestampdiff(year,net.dob,:endDate)<15 and net.gender='F',net.patient_id,null)) as Starting_Art_below_15yrs_F, " +
+                "count(distinct if(timestampdiff(year,net.dob,:endDate)>=15 and net.gender='M',net.patient_id,null)) as Starting_Art_15yrs_and_above_M, " +
+                "count(distinct if(timestampdiff(year,net.dob,:endDate)>=15 and net.gender='F',net.patient_id,null)) as Starting_Art_15yrs_and_above_F, " +
+                "count(distinct net.patient_id) as Starting_Art_Total " +
+//                "from kenyaemr_etl.etl_drug_event e " +
+                "  from ( " +
+                "  select e.patient_id,e.date_started, e.gender,e.dob,d.visit_date as dis_date, if(d.visit_date is not null, 1, 0) as TOut," +
+                "   e.regimen, e.regimen_line, e.alternative_regimen, max(fup.next_appointment_date) as latest_tca, "+
+                "  if(enr.transfer_in_date is not null, 1, 0) as TIn, max(fup.visit_date) as latest_vis_date" +
+                "    from (select e.patient_id,p.dob,p.Gender,min(e.date_started) as date_started, " +
+                "    mid(min(concat(e.date_started,e.regimen_name)),11) as regimen, " +
+                "    mid(min(concat(e.date_started,e.regimen_line)),11) as regimen_line, " +
+                "    max(if(discontinued,1,0))as alternative_regimen " +
+                "    from kenyaemr_etl.etl_drug_event e " +
+                "    join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "    group by e.patient_id) e " +
+                "    left outer join kenyaemr_etl.etl_patient_program_discontinuation d on d.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=e.patient_id " +
+                "    left outer join kenyaemr_etl.etl_patient_hiv_followup fup on fup.patient_id=e.patient_id " +
+                "    where  date(e.date_started) between :startDate and :endDate " +
+                "    group by e.patient_id " +
+                "    )net; ";
+                //"join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                //"where  date(e.date_started) between :startDate and :endDate;";
         SqlDataSetDefinition ds = new SqlDataSetDefinition();
         ds.setName("startingART");
         ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
@@ -181,29 +172,34 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
     protected DataSetDefinition revisitsOnART() {
 
-        String testQuery = " select count(distinct if(timestampdiff(year,e.dob,now())<1,e.patient_id,null)) as Revisit_on_ART_below_1_yr, " +
-                "count(distinct if(timestampdiff(year,e.dob,now())<15 and e.gender='M',e.patient_id,null)) as Revisit_on_ART_below_15yrs_M, " +
-                "count(distinct if(timestampdiff(year,e.dob,now())<15 and e.gender='F',e.patient_id,null)) as Revisit_on_ART_below_15yrs_F, " +
-                "count(distinct if(timestampdiff(year,e.dob,now())>=15 and e.gender='M',e.patient_id,null)) as Revisit_on_ART_15yrs_and_above_M, " +
-                "count(distinct if(timestampdiff(year,e.dob,now())>=15 and e.gender='F',e.patient_id,null)) as Revisit_on_ART_15yrs_and_above_F, " +
+        String testQuery = " select count(distinct if(timestampdiff(year,e.dob,:endDate)<1,e.patient_id,null)) as Revisit_on_ART_below_1_yr, " +
+                "count(distinct if(timestampdiff(year,e.dob,:endDate)<15 and e.gender='M',e.patient_id,null)) as Revisit_on_ART_below_15yrs_M, " +
+                "count(distinct if(timestampdiff(year,e.dob,:endDate)<15 and e.gender='F',e.patient_id,null)) as Revisit_on_ART_below_15yrs_F, " +
+                "count(distinct if(timestampdiff(year,e.dob,:endDate)>=15 and e.gender='M',e.patient_id,null)) as Revisit_on_ART_15yrs_and_above_M, " +
+                "count(distinct if(timestampdiff(year,e.dob,:endDate)>=15 and e.gender='F',e.patient_id,null)) as Revisit_on_ART_15yrs_and_above_F, " +
                 "count(distinct e.patient_id) as Revisit_on_ART_Total " +
                 "from ( " +
-                "select fup.visit_date,fup.patient_id,p.dob,p.Gender " +
+                "select fup.visit_date,fup.patient_id,p.dob,p.Gender, " +
+                "min(e.visit_date) as enroll_date, " +
+                "max(fup.visit_date) as latest_vis_date, " +
+                "max(fup.next_appointment_date) as latest_tca " +
                 "from kenyaemr_etl.etl_patient_hiv_followup fup " +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=fup.patient_id " +
-                "where date(fup.visit_date) between DATE_SUB(:endDate, INTERVAL 2 MONTH) and :endDate " +
-                //"-- filter discontinuations " +
-                "and fup.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation " +
-                "where date(visit_date) between :startDate and :endDate) " +
-                "union " +
-                "select e.visit_date,e.patient_id,p.dob,p.Gender " +
-                "from kenyaemr_etl.etl_hiv_enrollment e " +
-                "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
-                "where  date(e.visit_date) between :startDate and :endDate " +
+                "join kenyaemr_etl.etl_hiv_enrollment e  on fup.patient_id=e.patient_id " +
+                "where (date(fup.visit_date) <= :endDate) " +
+                " and fup.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation " +
+                " where date(visit_date) < :endDate and program_name='HIV') " +
+                "group by patient_id " +
                 ") e " +
-                "where e.patient_id in (select distinct patient_id  " +
-                "from kenyaemr_etl.etl_drug_event  " +
-                "where date(date_started)<:startDate) ;";
+                "where e.patient_id in (select patient_id\n" +
+                "from (select e.patient_id,p.dob,p.Gender,min(e.date_started) as date_started,\n" +
+                "mid(min(concat(e.date_started,e.regimen_name)),11) as regimen,\n" +
+                "mid(min(concat(e.date_started,e.regimen_line)),11) as regimen_line,\n" +
+                "max(if(discontinued,1,0))as alternative_regimen\n" +
+                "from kenyaemr_etl.etl_drug_event e\n" +
+                "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id\n" +
+                "group by e.patient_id) e\n" +
+                "where  date(e.date_started)<:startDate);";
         SqlDataSetDefinition ds = new SqlDataSetDefinition();
         ds.setName("revisitOnART");
         ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
@@ -219,29 +215,28 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
     protected DataSetDefinition currentlyOnART() {
 
-        String testQuery = " select count(distinct if(timestampdiff(year,e.dob,now())<1,e.patient_id,null)) as Currently_on_ART_below_1_yr, " +
-                "count(distinct if(timestampdiff(year,e.dob,now())<15 and e.gender='M',e.patient_id,null)) as Currently_on_ART_below_15yrs_M, " +
-                "count(distinct if(timestampdiff(year,e.dob,now())<15 and e.gender='F',e.patient_id,null)) as Currently_on_ART_below_15yrs_F, " +
-                "count(distinct if(timestampdiff(year,e.dob,now())>=15 and e.gender='M',e.patient_id,null)) as Currently_on_ART_15yrs_and_above_M, " +
-                "count(distinct if(timestampdiff(year,e.dob,now())>=15 and e.gender='F',e.patient_id,null)) as Currently_on_ART_15yrs_and_above_F, " +
+        String testQuery = " select count(distinct if(timestampdiff(year,e.dob,:endDate)<1,e.patient_id,null)) as Currently_on_ART_below_1_yr, " +
+                "count(distinct if(timestampdiff(year,e.dob,:endDate)<15 and e.gender='M',e.patient_id,null)) as Currently_on_ART_below_15yrs_M, " +
+                "count(distinct if(timestampdiff(year,e.dob,:endDate)<15 and e.gender='F',e.patient_id,null)) as Currently_on_ART_below_15yrs_F, " +
+                "count(distinct if(timestampdiff(year,e.dob,:endDate)>=15 and e.gender='M',e.patient_id,null)) as Currently_on_ART_15yrs_and_above_M, " +
+                "count(distinct if(timestampdiff(year,e.dob,:endDate)>=15 and e.gender='F',e.patient_id,null)) as Currently_on_ART_15yrs_and_above_F, " +
                 "count(distinct e.patient_id) as Currently_on_ART_Total " +
                 "from ( " +
-                "select fup.visit_date,fup.patient_id,p.dob,p.Gender " +
+                "select fup.visit_date,fup.patient_id,p.dob,p.Gender, " +
+                "min(e.visit_date) as enroll_date, " +
+                "max(fup.visit_date) as latest_vis_date, " +
+                "max(fup.next_appointment_date) as latest_tca " +
                 "from kenyaemr_etl.etl_patient_hiv_followup fup " +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=fup.patient_id " +
-                "where date(fup.visit_date) between DATE_SUB(:endDate, INTERVAL 2 MONTH) and :endDate " +
-                //"-- filter discontinuations " +
-                "and fup.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation " +
-                "where date(visit_date) between :startDate and :endDate) " +
-                "union " +
-                "select e.visit_date,e.patient_id,p.dob,p.Gender " +
-                "from kenyaemr_etl.etl_hiv_enrollment e " +
-                "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
-                "where  date(e.visit_date) between :startDate and :endDate " +
+                "join kenyaemr_etl.etl_hiv_enrollment e  on fup.patient_id=e.patient_id " +
+                "where (date(fup.visit_date) <= :endDate) " +
+                " and fup.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation " +
+                " where date(visit_date) < :endDate and program_name='HIV') " +
+                "group by patient_id " +
                 ") e " +
                 "where e.patient_id in (select distinct patient_id  " +
                 "from kenyaemr_etl.etl_drug_event  " +
-                "where date(date_started)<=:startDate);";
+                "where date(date_started)<=:endDate);";
         SqlDataSetDefinition ds = new SqlDataSetDefinition();
         ds.setName("currentOnART");
         ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
@@ -256,14 +251,28 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
     protected DataSetDefinition cumulativeOnART() {
 
-        String testQuery = " select count(distinct if(timestampdiff(year,p.dob,now())<15 and p.gender='M',e.patient_id,null)) as Ever_on_Art_below_15yrs_M, " +
-                "count(distinct if(timestampdiff(year,p.dob,now())<15 and p.gender='F',e.patient_id,null)) as Ever_on_Art_below_15yrs_F, " +
-                "count(distinct if(timestampdiff(year,p.dob,now())>=15 and p.gender='M',e.patient_id,null)) as Ever_on_Art_15yrs_and_above_M, " +
-                "count(distinct if(timestampdiff(year,p.dob,now())>=15 and p.gender='F',e.patient_id,null)) as Ever_on_Art_15yrs_and_above_F, " +
-                "count(distinct e.patient_id) as Ever_on_Art_Total " +
+        String testQuery = " select count(distinct if(timestampdiff(year,net.dob,:endDate)<15 and net.gender='M',net.patient_id,null)) as Ever_on_Art_below_15yrs_M, " +
+                "count(distinct if(timestampdiff(year,net.dob,:endDate)<15 and net.gender='F',net.patient_id,null)) as Ever_on_Art_below_15yrs_F, " +
+                "count(distinct if(timestampdiff(year,net.dob,:endDate)>=15 and net.gender='M',net.patient_id,null)) as Ever_on_Art_15yrs_and_above_M, " +
+                "count(distinct if(timestampdiff(year,net.dob,:endDate)>=15 and net.gender='F',net.patient_id,null)) as Ever_on_Art_15yrs_and_above_F, " +
+                "count(distinct net.patient_id) as Ever_on_Art_Total " +
+                "from ( " +
+                "select e.patient_id,e.date_started,min(enr.visit_date) as enrollment_date,e.gender,e.regimen, " +
+                "e.regimen_line,e.alternative_regimen,e.dob,d.visit_date as dis_date,if(d.visit_date is not null, 1, 0) as TOut, " +
+                "if(enr.transfer_in_date is not null, 1, 0) as TIn,enr.transfer_in_date,max(fup.visit_date) as latest_vis_date, " +
+                "max(fup.next_appointment_date) as latest_tca " +
+                "from (select e.patient_id,p.dob,p.Gender,min(e.date_started) as date_started, " +
+                "mid(min(concat(e.date_started,e.regimen_name)),11) as regimen, " +
+                "mid(min(concat(e.date_started,e.regimen_line)),11) as regimen_line, " +
+                "max(if(discontinued,1,0))as alternative_regimen " +
                 "from kenyaemr_etl.etl_drug_event e " +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
-                "where  date(e.date_started)<= :endDate; ";
+                "group by e.patient_id) e " +
+                "left outer join kenyaemr_etl.etl_patient_program_discontinuation d on d.patient_id=e.patient_id " +
+                "left outer join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=e.patient_id " +
+                "left outer join kenyaemr_etl.etl_patient_hiv_followup fup on fup.patient_id=e.patient_id " +
+                "group by e.patient_id " +
+                "having   (TIn=0 and date_started<=:endDate ) or (TIn=1 and date_started>transfer_in_date))net;";
         SqlDataSetDefinition ds = new SqlDataSetDefinition();
         ds.setName("everOnART");
         ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
@@ -299,10 +308,10 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
     protected DataSetDefinition tbScreening() {
 
-        String testQuery = " select count(distinct if(timestampdiff(year,p.dob,now())<15 and p.gender='M',tb.patient_id,null)) as Screen_for_TB_below_15yrs_M, " +
-                "count(distinct if(timestampdiff(year,p.dob,now())<15 and p.gender='F',tb.patient_id,null)) as Screen_for_TB_below_15yrs_F, " +
-                "count(distinct if(timestampdiff(year,p.dob,now())>=15 and p.gender='M',tb.patient_id,null)) as Screen_for_TB_15yrs_and_above_M, " +
-                "count(distinct if(timestampdiff(year,p.dob,now())>=15 and p.gender='F',tb.patient_id,null)) as Screen_for_TB_15yrs_and_above_F, " +
+        String testQuery = " select count(distinct if(timestampdiff(year,p.dob,:endDate)<15 and p.gender='M',tb.patient_id,null)) as Screen_for_TB_below_15yrs_M, " +
+                "count(distinct if(timestampdiff(year,p.dob,:endDate)<15 and p.gender='F',tb.patient_id,null)) as Screen_for_TB_below_15yrs_F, " +
+                "count(distinct if(timestampdiff(year,p.dob,:endDate)>=15 and p.gender='M',tb.patient_id,null)) as Screen_for_TB_15yrs_and_above_M, " +
+                "count(distinct if(timestampdiff(year,p.dob,:endDate)>=15 and p.gender='F',tb.patient_id,null)) as Screen_for_TB_15yrs_and_above_F, " +
                 "count(distinct tb.patient_id) as Screen_for_TB_Art_Total " +
                 "from kenyaemr_etl.etl_tb_screening tb " +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=tb.patient_id " +
@@ -341,12 +350,13 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
     protected DataSetDefinition hivCareVisits() {
 
-        String testQuery = " select count(distinct if(timestampdiff(year,p.dob,now())>=18 and p.gender='F',e.patient_id,null)) as 'Females_18+', " +
+        String testQuery = " select count(distinct if(timestampdiff(year,p.dob,:endDate)>=18 and p.gender='F',e.patient_id,null)) as 'Females_18+', " +
                 "count(distinct if(family_planning_method is not null  " +
                 "and family_planning_method<>190,e.patient_id,null)) as modern_contraceptives, " +
                 "count(distinct if(condom_provided=1065,e.patient_id,null)) as provided_with_condoms " +
                 "from kenyaemr_etl.etl_patient_hiv_followup e " +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=e.patient_id " +
                 "where  date(e.visit_date) between :startDate and :endDate;";
         SqlDataSetDefinition ds = new SqlDataSetDefinition();
         ds.setName("hivCareVisits");
@@ -362,14 +372,17 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
     protected DataSetDefinition ctxProphylaxis() {
 
-        String testQuery = " select count(distinct if(timestampdiff(year,p.dob,now())<15 and p.gender='M' and ctx_dispensed=1065,e.patient_id,null)) as On_CTX_Below_15yrs_M, " +
-                "count(distinct if(timestampdiff(year,p.dob,now())<15 and p.gender='F' and ctx_dispensed=1065,e.patient_id,null)) as On_CTX_Below_15yrs_F, " +
-                "count(distinct if(timestampdiff(year,p.dob,now())>=15 and p.gender='F' and ctx_dispensed=1065,e.patient_id,null)) as On_CTX_15yrs_and_above_F, " +
-                "count(distinct if(timestampdiff(year,p.dob,now())>=15 and p.gender='M' and ctx_dispensed=1065,e.patient_id,null)) as On_CTX_15yrs_and_above_M, " +
-                "count(distinct if(ctx_dispensed=1065,e.patient_id,null)) as On_CTX_Total " +
+        String testQuery = " select count(distinct if(timestampdiff(year,p.dob,:endDate)<15 and p.gender='M' and ctx_adherence is not null,e.patient_id,null)) as On_CTX_Below_15yrs_M, " +
+                "count(distinct if(timestampdiff(year,p.dob,:endDate)<15 and p.gender='F' and ctx_adherence is not null,e.patient_id,null)) as On_CTX_Below_15yrs_F, " +
+                "count(distinct if(timestampdiff(year,p.dob,:endDate)>=15 and p.gender='F' and ctx_adherence is not null,e.patient_id,null)) as On_CTX_15yrs_and_above_F, " +
+                "count(distinct if(timestampdiff(year,p.dob,:endDate)>=15 and p.gender='M' and ctx_adherence is not null,e.patient_id,null)) as On_CTX_15yrs_and_above_M, " +
+                "count(distinct if(ctx_adherence is not null,e.patient_id,null)) as On_CTX_Total " +
                 "from kenyaemr_etl.etl_patient_hiv_followup e " +
                 "join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
-                "where  date(e.visit_date) between :startDate and :endDate;";
+                "join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=e.patient_id " +
+                "where  date(e.visit_date) <= :endDate " +
+                " and e.patient_id not in (select patient_id from kenyaemr_etl.etl_patient_program_discontinuation " +
+                " where date(visit_date) < :endDate and program_name='HIV') " ;
         SqlDataSetDefinition ds = new SqlDataSetDefinition();
         ds.setName("ctxProphylaxis");
         ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
@@ -385,7 +398,7 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
     protected DataSetDefinition hei() {
 
-        String testQuery = " select count(distinct  if(timestampdiff(month,p.dob,:endDate)<=2,e.patient_id,null)) as 'HV03-01' " +
+        String testQuery = " select count(distinct  if(timestampdiff(month,p.dob,:endDate)<=2,e.patient_id,null)) as 'HV03-01', count(distinct  if(timestampdiff(month,p.dob,:endDate)<=2,e.patient_id,null)) as 'HV03-02' " +
                 "    from kenyaemr_etl.etl_hei_enrollment e " +
                 "    join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
                 "    where  date(e.visit_date) between :startDate and :endDate";
@@ -404,10 +417,20 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
     protected DataSetDefinition scheduledVisits() {
 
-        String testQuery = " select count(distinct f1.patient_id) as scheduled_visits " +
-                "    from kenyaemr_etl.etl_hei_follow_up_visit f1 " +
-                "    join kenyaemr_etl.etl_hei_follow_up_visit f2 on f2.visit_date=f1.next_appointment_date " +
-                "    where date(f1.visit_date) between :startDate and :endDate;";
+        String testQuery = " select\n" +
+                "count(distinct if(next_appointment_date is not null, patient_id,null)) as total_visits,\n" +
+                "count(distinct if(visit_date=next_appointment_date, patient_id, null)) as scheduled_visits,\n" +
+                "count(distinct if(visit_date<>next_appointment_date, patient_id, null)) as unscheduled_visits,\n" +
+                "count(distinct patient_id) as total_visits1\n" +
+                "-- patient_id,max(visit_date), max(next_appointment_date)\n" +
+                "from (\n" +
+                "select f1.patient_id,max(f1.visit_date) as visit_date, max(f2.next_appointment_date) as next_appointment_date \n" +
+                "from kenyaemr_etl.etl_patient_hiv_followup f1\n" +
+                "join kenyaemr_etl.etl_patient_hiv_followup f2 on f1.visit_date>f2.visit_date\n" +
+                "and f1.patient_id=f2.patient_id\n" +
+                "join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=f1.patient_id\n" +
+                "where date(f1.visit_date) between :startDate and :endDate\n" +
+                "group by f1.patient_id, f1.visit_date)vis";
         SqlDataSetDefinition ds = new SqlDataSetDefinition();
         ds.setName("scheduledVisits");
         ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
@@ -423,10 +446,20 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
     protected DataSetDefinition unscheduledVisits() {
 
-        String testQuery = " select count(distinct f1.patient_id) as unscheduled_visits " +
-                "    from kenyaemr_etl.etl_hei_follow_up_visit f1 " +
-                "    join kenyaemr_etl.etl_hei_follow_up_visit f2 on f2.visit_date<>f1.next_appointment_date " +
-                "    where date(f1.visit_date) between :startDate and :endDate;";
+        String testQuery = " select\n" +
+                "count(distinct if(next_appointment_date is not null, patient_id,null)) as total_visits,\n" +
+                "count(distinct if(visit_date=next_appointment_date, patient_id, null)) as scheduled_visits,\n" +
+                "count(distinct if(visit_date<>next_appointment_date, patient_id, null)) as unscheduled_visits,\n" +
+                "count(distinct patient_id) as total_visits1\n" +
+                "-- patient_id,max(visit_date), max(next_appointment_date)\n" +
+                "from (\n" +
+                "select f1.patient_id,max(f1.visit_date) as visit_date, max(f2.next_appointment_date) as next_appointment_date \n" +
+                "from kenyaemr_etl.etl_patient_hiv_followup f1\n" +
+                "join kenyaemr_etl.etl_patient_hiv_followup f2 on f1.visit_date>f2.visit_date\n" +
+                "and f1.patient_id=f2.patient_id\n" +
+                "join kenyaemr_etl.etl_hiv_enrollment enr on enr.patient_id=f1.patient_id\n" +
+                "where date(f1.visit_date) between :startDate and :endDate\n" +
+                "group by f1.patient_id, f1.visit_date)vis";
         SqlDataSetDefinition ds = new SqlDataSetDefinition();
         ds.setName("unscheduledVisits");
         ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
@@ -443,8 +476,7 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
         String testQuery = " select count(distinct patient_id) as 'Total_Tested' " +
                 "    from kenyaemr_etl.etl_mch_enrollment e " +
-                "    where (e.hiv_test_date between :startDate and :endDate) or " +
-                "    (e.partner_hiv_test_date between :startDate and :endDate);";
+                "    where (e.hiv_test_date between :startDate and :endDate) ;";
         SqlDataSetDefinition ds = new SqlDataSetDefinition();
         ds.setName("mchTotalTested");
         ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
@@ -514,6 +546,27 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
     }
 
 
+    protected DataSetDefinition infantTestingInitial() {
+
+        String testQuery = "select  count(distinct if(timestampdiff(month,p.dob,:endDate)<=2,e.patient_id,null)) as 'HV02-24', " +
+                "  count(distinct if(timestampdiff(month,p.dob,:endDate) between 3 and 8,e.patient_id,null)) as 'HV02-25', " +
+                "  count(distinct if(timestampdiff(month,p.dob,:endDate) between 9 and 12,e.patient_id,null)) as 'HV02-26', " +
+                "  count(distinct if(timestampdiff(month,p.dob,:endDate)<=12,e.patient_id,null)) as 'HV02-27' " +
+                "    from kenyaemr_etl.etl_hei_follow_up_visit e " +
+                "    join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
+                "    where dna_pcr_result is not null and " +
+                "    (e.visit_date between :startDate and :endDate); ";
+        SqlDataSetDefinition ds = new SqlDataSetDefinition();
+        ds.setName("InfantTestingInitial");
+        ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
+        ds.addParameter(new Parameter("endDate", "End Date", Date.class));
+        ds.setSqlQuery(testQuery);
+        ds.setDescription("Infant Testing initial tests only");
+
+        return ds;
+
+    }
+
 
     protected DataSetDefinition hivTesting() {
 
@@ -560,26 +613,6 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
 
     }
 
-    protected DataSetDefinition infantTestingInitial() {
-
-        String testQuery = "select  count(distinct if(timestampdiff(month,p.dob,:endDate)<=2,e.patient_id,null)) as 'HV02-24', " +
-                "  count(distinct if(timestampdiff(month,p.dob,:endDate) between 3 and 8,e.patient_id,null)) as 'HV02-25', " +
-                "  count(distinct if(timestampdiff(month,p.dob,:endDate) between 9 and 12,e.patient_id,null)) as 'HV02-26', " +
-                "  count(distinct if(timestampdiff(month,p.dob,:endDate)<=12,e.patient_id,null)) as 'HV02-27' " +
-                "    from kenyaemr_etl.etl_hei_follow_up_visit e " +
-                "    join kenyaemr_etl.etl_patient_demographics p on p.patient_id=e.patient_id " +
-                "    where dna_pcr_result is not null and " +
-                "    (e.visit_date between :startDate and :endDate); ";
-        SqlDataSetDefinition ds = new SqlDataSetDefinition();
-        ds.setName("InfantTestingInitial");
-        ds.addParameter(new Parameter("startDate", "Start Date", Date.class));
-        ds.addParameter(new Parameter("endDate", "End Date", Date.class));
-        ds.setSqlQuery(testQuery);
-        ds.setDescription("Infant Testing initial tests only");
-
-        return ds;
-
-    }
 
     //we will need to revise this
     protected DataSetDefinition netCohort() {
@@ -588,7 +621,7 @@ public class FlatMOH731ReportBuilder extends AbstractReportBuilder {
                 "  count(distinct if(net.regimen_line='1st Line' and net.alternative_regimen=0,net.patient_id,null)) as 'HV03-46', " +
                 "  count(distinct if(net.regimen_line='1st Line' and net.alternative_regimen=1,net.patient_id,null)) as 'HV03-47', " +
                 "  count(distinct if(net.regimen_line='2nd Line',net.patient_id,null)) as 'HV03-48',  "+
-                "  count(distinct if(datediff(latest_tca,'2015-01-31')<=90,net.patient_id,null)) as on_therapy  " +
+                "  count(distinct if(timestampdiff(day,latest_tca,:endDate)<=90,net.patient_id,null)) as on_therapy  " +
                 "  from ( " +
                 "  select e.patient_id,e.date_started, e.gender,e.dob,d.visit_date as dis_date, if(d.visit_date is not null, 1, 0) as TOut," +
                 "   e.regimen, e.regimen_line, e.alternative_regimen, max(fup.next_appointment_date) as latest_tca, "+

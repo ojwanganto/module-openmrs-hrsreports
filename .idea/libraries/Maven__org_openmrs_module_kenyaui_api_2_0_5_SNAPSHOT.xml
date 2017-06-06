@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.openmrs.module:kenyaui-api:2.0.5-SNAPSHOT">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/openmrs/module/kenyaui-api/2.0.5-SNAPSHOT/kenyaui-api-2.0.5-20160921.125433-3.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/org/openmrs/module/kenyaui-api/2.0.5-SNAPSHOT/kenyaui-api-2.0.5-20160921.125433-3-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/openmrs/module/kenyaui-api/2.0.5-SNAPSHOT/kenyaui-api-2.0.5-20160921.125433-3-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

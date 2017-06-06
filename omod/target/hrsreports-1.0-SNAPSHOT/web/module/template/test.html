@@ -1,0 +1,44 @@
+<html>
+<head><title>Check Digit Test </title>
+    <script type="text/javascript">
+        function luhnCheckDigit(number) {
+            var validChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVYWXZ_";
+            number = number.toUpperCase().trim();
+            var sum = 0;
+            for (var i = 0; i < number.length; i++) {
+                var ch = number.charAt(number.length - i - 1);
+                if (validChars.indexOf(ch) < 0) {
+                    alert("Invalid character(s) found!");
+                    return false;
+                }
+                var digit = ch.charCodeAt(0) - 48;
+                var weight;
+                if (i % 2 == 0) {
+                    weight = (2 * digit) - parseInt(digit / 5) * 9;
+                }
+                else {
+                    weight = digit;
+                }
+                sum += weight;
+            }
+            sum = Math.abs(sum) + 10;
+            var digit = (10 - (sum % 10)) % 10;
+            return number + "-" + digit;
+        }
+        function display() {
+            var providedIdentifier = document.getElementById("identifier").value;
+            var checkResult = luhnCheckDigit(providedIdentifier);
+            document.getElementById("divresult").innerHTML = checkResult;
+            document.getElementById("result").value = checkResult;
+        }
+    </script>
+</head>
+<body>
+<br/>
+Enter Identifier: <input type="text" id="identifier" size="20" onkeyup="display()"/>
+<input type="text" id="result"/>
+<div id="divresult" style="font-size: 15px; color: darkblue" ></div>
+
+
+</body>
+</html>
